@@ -22,6 +22,31 @@ function getTextContent(message: UIMessage): string {
     .join("");
 }
 
+function extractProfilesFromMessages(messages: UIMessage[]): Array<Record<string, unknown>> {
+  const profiles: Array<Record<string, unknown>> = [];
+
+  for (const message of messages) {
+    if (!message.parts) continue;
+    for (const part of message.parts) {
+      if (!part.type.startsWith("tool-") && part.type !== "dynamic-tool") {
+        continue;
+      }
+      const toolPart = part as Record<string, unknown>;
+      const output = toolPart.output as Record<string, unknown> | undefined;
+      if (!output) continue;
+      const results = (output.results ?? output.profiles) as unknown[] | undefined;
+      if (!Array.isArray(results)) continue;
+      for (const result of results) {
+        if (result && typeof result === "object") {
+          profiles.push(result as Record<string, unknown>);
+        }
+      }
+    }
+  }
+
+  return profiles;
+}
+
 export function ChatThread({
   conversationId,
   initialMessages = [],
@@ -32,6 +57,7 @@ export function ChatThread({
   const scrollRef = useRef<HTMLDivElement>(null);
   const hasHydratedRef = useRef(false);
   const hasAutoSentRef = useRef(false);
+  const hasProfileHydratedRef = useRef(false);
   const [input, setInput] = useState("");
 
   // Create transport with auth headers - memoized to avoid recreating on each render
@@ -82,6 +108,7 @@ export function ChatThread({
   useEffect(() => {
     hasHydratedRef.current = false;
     hasAutoSentRef.current = false;
+    hasProfileHydratedRef.current = false;
   }, [conversationId]);
 
   useEffect(() => {
@@ -94,6 +121,17 @@ export function ChatThread({
     setMessages(initialMessages);
     hasHydratedRef.current = true;
   }, [initialMessages, messages.length, setMessages]);
+
+  useEffect(() => {
+    if (hasProfileHydratedRef.current) return;
+    if (initialMessages.length === 0) return;
+
+    const profiles = extractProfilesFromMessages(initialMessages);
+    if (profiles.length > 0) {
+      addProfiles(profiles as unknown as Parameters<typeof addProfiles>[0]);
+    }
+    hasProfileHydratedRef.current = true;
+  }, [addProfiles, initialMessages]);
 
   useEffect(() => {
     if (!autoSendInitial || hasAutoSentRef.current) return;

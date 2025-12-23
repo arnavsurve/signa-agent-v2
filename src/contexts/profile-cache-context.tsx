@@ -19,6 +19,7 @@ interface ProfileData {
 
 interface ProfileCacheContextType {
   getProfile: (screenName: string) => ProfileData | undefined;
+  getProfileByUrl: (url: string) => ProfileData | undefined;
   getProfileByUserId: (userId: number) => ProfileData | undefined;
   addProfiles: (profiles: ProfileData[]) => void;
   getProfileImageUrl: (screenName: string) => string | undefined;
@@ -30,6 +31,9 @@ export function ProfileCacheProvider({ children }: { children: ReactNode }) {
   const [profilesByScreenName, setProfilesByScreenName] = useState<
     Map<string, ProfileData>
   >(new Map());
+  const [profilesByUrl, setProfilesByUrl] = useState<Map<string, ProfileData>>(
+    new Map()
+  );
   const [profilesByUserId, setProfilesByUserId] = useState<
     Map<number, ProfileData>
   >(new Map());
@@ -48,7 +52,16 @@ export function ProfileCacheProvider({ children }: { children: ReactNode }) {
     [profilesByUserId]
   );
 
+  const getProfileByUrl = useCallback(
+    (url: string): ProfileData | undefined => {
+      return profilesByUrl.get(url);
+    },
+    [profilesByUrl]
+  );
+
   const addProfiles = useCallback((profiles: ProfileData[]) => {
+    if (!Array.isArray(profiles) || profiles.length === 0) return;
+
     setProfilesByScreenName((prev) => {
       const next = new Map(prev);
       for (const profile of profiles) {
@@ -59,11 +72,25 @@ export function ProfileCacheProvider({ children }: { children: ReactNode }) {
       return next;
     });
 
+    setProfilesByUrl((prev) => {
+      const next = new Map(prev);
+      for (const profile of profiles) {
+        if (profile.profileUrl) {
+          next.set(profile.profileUrl, profile);
+        }
+      }
+      return next;
+    });
+
     setProfilesByUserId((prev) => {
       const next = new Map(prev);
       for (const profile of profiles) {
-        if (profile.userId) {
-          next.set(profile.userId, profile);
+        const userId = Number(profile.userId);
+        if (Number.isFinite(userId) && userId > 0) {
+          next.set(userId, {
+            ...profile,
+            userId,
+          });
         }
       }
       return next;
@@ -82,6 +109,7 @@ export function ProfileCacheProvider({ children }: { children: ReactNode }) {
     <ProfileCacheContext.Provider
       value={{
         getProfile,
+        getProfileByUrl,
         getProfileByUserId,
         addProfiles,
         getProfileImageUrl,
