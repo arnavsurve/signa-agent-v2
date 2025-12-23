@@ -1,16 +1,18 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Space_Grotesk, IBM_Plex_Mono } from "next/font/google";
 import { AuthProvider } from "@/contexts/auth-context";
 import { ProfileCacheProvider } from "@/contexts/profile-cache-context";
+import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const plexMono = IBM_Plex_Mono({
+  variable: "--font-plex-mono",
+  weight: ["400", "500", "600"],
   subsets: ["latin"],
 });
 
@@ -27,13 +29,15 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${spaceGrotesk.variable} ${plexMono.variable} antialiased`}
       >
-        <AuthProvider>
-          <ProfileCacheProvider>
-            {children}
-          </ProfileCacheProvider>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <ProfileCacheProvider>
+              {children}
+            </ProfileCacheProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
