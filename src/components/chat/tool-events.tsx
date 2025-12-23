@@ -32,85 +32,26 @@ interface ToolEventsProps {
   isLoading: boolean;
 }
 
-// Tool category colors for visual distinction
-const TOOL_COLORS: Record<
-  string,
-  { bg: string; text: string; border: string; icon: React.ReactElement }
-> = {
-  find_people: {
-    bg: "bg-blue-50 dark:bg-blue-950/30",
-    text: "text-blue-700 dark:text-blue-300",
-    border: "border-blue-200 dark:border-blue-800",
-    icon: <Search className="w-3 h-3" />,
-  },
-  get_person_details: {
-    bg: "bg-purple-50 dark:bg-purple-950/30",
-    text: "text-purple-700 dark:text-purple-300",
-    border: "border-purple-200 dark:border-purple-800",
-    icon: <User className="w-3 h-3" />,
-  },
-  find_by_company: {
-    bg: "bg-cyan-50 dark:bg-cyan-950/30",
-    text: "text-cyan-700 dark:text-cyan-300",
-    border: "border-cyan-200 dark:border-cyan-800",
-    icon: <Building2 className="w-3 h-3" />,
-  },
-  find_by_investor: {
-    bg: "bg-amber-50 dark:bg-amber-950/30",
-    text: "text-amber-700 dark:text-amber-300",
-    border: "border-amber-200 dark:border-amber-800",
-    icon: <TrendingUp className="w-3 h-3" />,
-  },
-  get_relationship_network: {
-    bg: "bg-indigo-50 dark:bg-indigo-950/30",
-    text: "text-indigo-700 dark:text-indigo-300",
-    border: "border-indigo-200 dark:border-indigo-800",
-    icon: <Network className="w-3 h-3" />,
-  },
-  analyze_network: {
-    bg: "bg-rose-50 dark:bg-rose-950/30",
-    text: "text-rose-700 dark:text-rose-300",
-    border: "border-rose-200 dark:border-rose-800",
-    icon: <BarChart3 className="w-3 h-3" />,
-  },
-  get_my_feeds: {
-    bg: "bg-emerald-50 dark:bg-emerald-950/30",
-    text: "text-emerald-700 dark:text-emerald-300",
-    border: "border-emerald-200 dark:border-emerald-800",
-    icon: <Rss className="w-3 h-3" />,
-  },
-  get_feed_signals: {
-    bg: "bg-emerald-50 dark:bg-emerald-950/30",
-    text: "text-emerald-700 dark:text-emerald-300",
-    border: "border-emerald-200 dark:border-emerald-800",
-    icon: <Rss className="w-3 h-3" />,
-  },
-  get_aggregated_feed_signals: {
-    bg: "bg-emerald-50 dark:bg-emerald-950/30",
-    text: "text-emerald-700 dark:text-emerald-300",
-    border: "border-emerald-200 dark:border-emerald-800",
-    icon: <Rss className="w-3 h-3" />,
-  },
-  get_my_groups: {
-    bg: "bg-teal-50 dark:bg-teal-950/30",
-    text: "text-teal-700 dark:text-teal-300",
-    border: "border-teal-200 dark:border-teal-800",
-    icon: <Users className="w-3 h-3" />,
-  },
-  get_group_members: {
-    bg: "bg-teal-50 dark:bg-teal-950/30",
-    text: "text-teal-700 dark:text-teal-300",
-    border: "border-teal-200 dark:border-teal-800",
-    icon: <Users className="w-3 h-3" />,
-  },
+const TOOL_ICONS: Record<string, React.ReactElement> = {
+  find_people: <Search className="w-3 h-3" />,
+  get_person_details: <User className="w-3 h-3" />,
+  find_by_company: <Building2 className="w-3 h-3" />,
+  find_by_investor: <TrendingUp className="w-3 h-3" />,
+  get_relationship_network: <Network className="w-3 h-3" />,
+  analyze_network: <BarChart3 className="w-3 h-3" />,
+  get_my_feeds: <Rss className="w-3 h-3" />,
+  get_feed_signals: <Rss className="w-3 h-3" />,
+  get_aggregated_feed_signals: <Rss className="w-3 h-3" />,
+  get_my_groups: <Users className="w-3 h-3" />,
+  get_group_members: <Users className="w-3 h-3" />,
 };
 
-const DEFAULT_TOOL_COLOR = {
-  bg: "bg-muted/50",
-  text: "text-muted-foreground",
-  border: "border-border",
-  icon: <Search className="w-3 h-3" />,
-};
+const DEFAULT_TOOL_ICON = <Search className="w-3 h-3" />;
+const TOOL_SURFACE = "bg-muted/50";
+const TOOL_SURFACE_SOFT = "bg-muted/30";
+const TOOL_BORDER = "border-border";
+const TOOL_TEXT = "text-foreground";
+const TOOL_MUTED = "text-muted-foreground";
 
 export function ToolEvents({ invocations, isLoading }: ToolEventsProps) {
   const [isExpanded, setIsExpanded] = useState(true);
@@ -141,7 +82,7 @@ export function ToolEvents({ invocations, isLoading }: ToolEventsProps) {
         onClick={() => setIsExpanded(!isExpanded)}
         className={cn(
           "w-full flex items-center gap-2 px-3 py-2 text-left transition-colors",
-          "hover:bg-muted/80 bg-muted/50"
+          "bg-muted/70 hover:bg-muted"
         )}
       >
         {isExpanded ? (
@@ -173,7 +114,7 @@ export function ToolEvents({ invocations, isLoading }: ToolEventsProps) {
             </span>
           )}
           {totalResults > 0 && (
-            <span className="text-muted-foreground">({totalResults} results)</span>
+            <span className="text-foreground/70">({totalResults} results)</span>
           )}
         </div>
       </button>
@@ -197,7 +138,7 @@ function ToolInvocationItem({ invocation }: { invocation: ToolInvocation }) {
   const result = invocation.result as Record<string, unknown> | undefined;
   const hasError = result?.error ? true : false;
 
-  const toolColor = TOOL_COLORS[invocation.toolName] ?? DEFAULT_TOOL_COLOR;
+  const toolIcon = TOOL_ICONS[invocation.toolName] ?? DEFAULT_TOOL_ICON;
 
   const toolDisplayName = invocation.toolName
     .replace(/_/g, " ")
@@ -211,16 +152,16 @@ function ToolInvocationItem({ invocation }: { invocation: ToolInvocation }) {
     profiles.length;
 
   return (
-    <div className={cn("border-b last:border-b-0", toolColor.border)}>
+    <div className={cn("border-b last:border-b-0", TOOL_BORDER)}>
       {/* Tool header */}
-      <div className={cn("flex items-center gap-2 px-3 py-2", toolColor.bg)}>
-        <div className={toolColor.text}>{toolColor.icon}</div>
+      <div className={cn("flex items-center gap-2 px-3 py-2", TOOL_SURFACE)}>
+        <div className={TOOL_MUTED}>{toolIcon}</div>
 
-        <span className={cn("font-medium text-xs", toolColor.text)}>
+        <span className={cn("font-medium text-xs", TOOL_TEXT)}>
           {toolDisplayName}
         </span>
 
-        <span className="text-xs text-muted-foreground truncate flex-1">
+        <span className={cn("text-xs truncate flex-1", TOOL_MUTED)}>
           {formatArgsSummary(invocation.args)}
         </span>
 
@@ -238,12 +179,12 @@ function ToolInvocationItem({ invocation }: { invocation: ToolInvocation }) {
               </span>
             )
           ) : (
-            <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
+            <Loader2 className={cn("w-3 h-3 animate-spin", TOOL_MUTED)} />
           )}
 
           <button
             onClick={() => setShowDetails(!showDetails)}
-            className="text-xs text-muted-foreground hover:text-foreground"
+            className={cn("text-xs hover:text-foreground", TOOL_MUTED)}
           >
             {showDetails ? "Hide" : "Details"}
           </button>
@@ -252,17 +193,17 @@ function ToolInvocationItem({ invocation }: { invocation: ToolInvocation }) {
 
       {/* Details section */}
       {showDetails && (
-        <div className="px-3 py-2 bg-background text-xs space-y-2">
+        <div className={cn("px-3 py-2 text-[11px] space-y-2", TOOL_SURFACE_SOFT, TOOL_TEXT)}>
           <div>
-            <div className="font-medium text-muted-foreground mb-1">Parameters:</div>
-            <pre className="font-mono text-[10px] bg-muted p-2 rounded overflow-x-auto">
+            <div className={cn("font-medium mb-1", TOOL_MUTED)}>Parameters:</div>
+            <pre className="font-mono text-[11px] leading-relaxed bg-muted/60 text-foreground p-2 rounded overflow-x-auto border border-border/60">
               {JSON.stringify(invocation.args, null, 2)}
             </pre>
           </div>
           {isComplete && result && !hasError && (
             <div>
-              <div className="font-medium text-muted-foreground mb-1">Raw Result:</div>
-              <pre className="font-mono text-[10px] bg-muted p-2 rounded overflow-x-auto max-h-48">
+              <div className={cn("font-medium mb-1", TOOL_MUTED)}>Raw Result:</div>
+              <pre className="font-mono text-[11px] leading-relaxed bg-muted/60 text-foreground p-2 rounded overflow-x-auto max-h-48 border border-border/60">
                 {formatResultPreview(result)}
               </pre>
             </div>
@@ -272,7 +213,7 @@ function ToolInvocationItem({ invocation }: { invocation: ToolInvocation }) {
 
       {/* Profiles grid */}
       {isComplete && profiles.length > 0 && (
-        <div className="px-3 py-2 bg-background border-t">
+        <div className={cn("px-3 py-2 border-t bg-background", TOOL_BORDER)}>
           <button
             onClick={() => setShowProfiles(!showProfiles)}
             className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-2"
@@ -392,7 +333,7 @@ function ProfileLinkList({
   const visibleProfiles = profiles.slice(0, maxItems);
 
   return (
-    <div className="space-y-2 text-xs font-mono">
+    <div className="space-y-2 text-xs font-mono text-foreground">
       {visibleProfiles.map((profile) => {
         const label = getProfileLabel(profile);
         const profileUrl = profile.profileUrl;
@@ -416,7 +357,7 @@ function ProfileLinkList({
                 href={profileUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary hover:underline"
+                className="text-primary underline underline-offset-2 hover:underline"
               >
                 {label}
               </a>
