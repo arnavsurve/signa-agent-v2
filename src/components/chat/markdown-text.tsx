@@ -17,7 +17,7 @@ export function MarkdownText({ content, className }: MarkdownTextProps) {
   return (
     <div
       className={cn(
-        "prose prose-sm dark:prose-invert max-w-none leading-relaxed prose-p:leading-relaxed prose-li:leading-relaxed",
+        "prose prose-base dark:prose-invert max-w-none leading-relaxed prose-p:leading-relaxed prose-li:leading-relaxed prose-ul:space-y-2 prose-li:marker:text-muted-foreground",
         className
       )}
     >

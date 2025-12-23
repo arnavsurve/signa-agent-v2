@@ -1,7 +1,7 @@
 "use client";
 
 import { UIMessage } from "@ai-sdk/react";
-import { User, Bot, Loader2 } from "lucide-react";
+import { Bot, Loader2 } from "lucide-react";
 import { MarkdownText } from "./markdown-text";
 import { ToolEvents } from "./tool-events";
 import { cn } from "@/lib/utils";
@@ -73,27 +73,22 @@ export function Message({ message, isLast, isLoading }: MessageProps) {
   return (
     <div
       className={cn(
-        "flex gap-4",
-        isUser ? "flex-row-reverse" : "flex-row"
+        "flex gap-3 fade-rise",
+        isUser ? "justify-end" : "justify-start"
       )}
     >
       {/* Avatar */}
-      <div
-        className={cn(
-          "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center",
-          isUser
-            ? "bg-primary text-primary-foreground"
-            : "bg-muted text-muted-foreground"
-        )}
-      >
-        {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
-      </div>
+      {!isUser && (
+        <div className="flex-shrink-0 h-8 w-8 rounded-full bg-foreground text-background flex items-center justify-center">
+          <Bot className="h-4 w-4" />
+        </div>
+      )}
 
       {/* Content */}
       <div
         className={cn(
-          "flex-1 min-w-0 space-y-2",
-          isUser ? "text-right" : "text-left"
+          "min-w-0 space-y-3",
+          isUser ? "max-w-[70%]" : "flex-1 max-w-4xl"
         )}
       >
         {/* Tool invocations */}
@@ -106,20 +101,19 @@ export function Message({ message, isLast, isLoading }: MessageProps) {
 
         {/* Message content */}
         {textContent && (
-          <div
-            className={cn(
-              "inline-block rounded-lg px-4 py-2 max-w-full",
-              isUser
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-foreground"
-            )}
-          >
+          <>
             {isUser ? (
-              <p className="whitespace-pre-wrap">{textContent}</p>
+              <div className="ml-auto rounded-xl border border-border/60 bg-muted/40 px-3 py-2 text-sm text-foreground">
+                <p className="whitespace-pre-wrap leading-relaxed">
+                  {textContent}
+                </p>
+              </div>
             ) : (
-              <MarkdownText content={textContent} />
+              <div className="text-[15px] leading-relaxed text-foreground">
+                <MarkdownText content={textContent} />
+              </div>
             )}
-          </div>
+          </>
         )}
 
         {/* Loading spinner */}

@@ -173,19 +173,19 @@ export function ChatThread({
   };
 
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex flex-col h-full min-h-0 gap-2">
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto px-4 py-6"
+        className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4"
       >
         <div className="max-w-3xl mx-auto">
           {messages.length === 0 ? (
-            <div className="text-center text-muted-foreground py-12">
-              <h2 className="text-xl font-medium mb-2">
+            <div className="text-center text-muted-foreground py-16">
+              <h2 className="text-2xl font-semibold text-foreground mb-2">
                 Start a conversation
               </h2>
-              <p className="text-sm">
-                Ask about people, signals, or network insights
+              <p className="text-sm text-muted-foreground">
+                Ask about people, signals, or network insights.
               </p>
             </div>
           ) : (
@@ -193,11 +193,11 @@ export function ChatThread({
           )}
 
           {error && (
-            <div className="mt-4 p-4 bg-destructive/10 text-destructive rounded-lg">
-              <p className="text-sm">Error: {error.message}</p>
+            <div className="mt-6 bento-panel rounded-2xl p-4 text-destructive">
+              <p className="text-sm font-medium">Error: {error.message}</p>
               <button
                 onClick={() => regenerate()}
-                className="text-sm underline mt-2"
+                className="text-sm underline underline-offset-2 mt-2"
               >
                 Try again
               </button>
@@ -206,7 +206,7 @@ export function ChatThread({
         </div>
       </div>
 
-      <div className="border-t bg-background p-4">
+      <div className="px-4 sm:px-6 pb-2">
         <div className="max-w-3xl mx-auto">
           <Composer
             input={input}

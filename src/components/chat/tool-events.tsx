@@ -47,11 +47,6 @@ const TOOL_ICONS: Record<string, React.ReactElement> = {
 };
 
 const DEFAULT_TOOL_ICON = <Search className="w-3 h-3" />;
-const TOOL_SURFACE = "bg-muted/50";
-const TOOL_SURFACE_SOFT = "bg-muted/30";
-const TOOL_BORDER = "border-border";
-const TOOL_TEXT = "text-foreground";
-const TOOL_MUTED = "text-muted-foreground";
 
 export function ToolEvents({ invocations, isLoading }: ToolEventsProps) {
   const [isExpanded, setIsExpanded] = useState(true);
@@ -77,12 +72,12 @@ export function ToolEvents({ invocations, isLoading }: ToolEventsProps) {
   }, 0);
 
   return (
-    <div className="rounded-lg border text-sm overflow-hidden">
+    <div className="rounded-xl border border-border/60 bg-background/80 text-sm overflow-hidden">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
         className={cn(
-          "w-full flex items-center gap-2 px-3 py-2 text-left transition-colors",
-          "bg-muted/70 hover:bg-muted"
+          "w-full flex items-center gap-2 px-4 py-2.5 text-left transition-colors",
+          "bg-muted/40 hover:bg-muted/60"
         )}
       >
         {isExpanded ? (
@@ -152,16 +147,16 @@ function ToolInvocationItem({ invocation }: { invocation: ToolInvocation }) {
     profiles.length;
 
   return (
-    <div className={cn("border-b last:border-b-0", TOOL_BORDER)}>
+    <div className="border-b border-border/60 last:border-b-0">
       {/* Tool header */}
-      <div className={cn("flex items-center gap-2 px-3 py-2", TOOL_SURFACE)}>
-        <div className={TOOL_MUTED}>{toolIcon}</div>
+      <div className="flex items-center gap-2 px-4 py-2">
+        <div className="text-muted-foreground">{toolIcon}</div>
 
-        <span className={cn("font-medium text-xs", TOOL_TEXT)}>
+        <span className="font-medium text-xs text-foreground">
           {toolDisplayName}
         </span>
 
-        <span className={cn("text-xs truncate flex-1", TOOL_MUTED)}>
+        <span className="text-xs truncate flex-1 text-muted-foreground">
           {formatArgsSummary(invocation.args)}
         </span>
 
@@ -179,12 +174,12 @@ function ToolInvocationItem({ invocation }: { invocation: ToolInvocation }) {
               </span>
             )
           ) : (
-            <Loader2 className={cn("w-3 h-3 animate-spin", TOOL_MUTED)} />
+            <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
           )}
 
           <button
             onClick={() => setShowDetails(!showDetails)}
-            className={cn("text-xs hover:text-foreground", TOOL_MUTED)}
+            className="text-xs text-muted-foreground hover:text-foreground"
           >
             {showDetails ? "Hide" : "Details"}
           </button>
@@ -193,17 +188,17 @@ function ToolInvocationItem({ invocation }: { invocation: ToolInvocation }) {
 
       {/* Details section */}
       {showDetails && (
-        <div className={cn("px-3 py-2 text-[11px] space-y-2", TOOL_SURFACE_SOFT, TOOL_TEXT)}>
+        <div className="px-4 py-3 text-[11px] space-y-2 bg-muted/30">
           <div>
-            <div className={cn("font-medium mb-1", TOOL_MUTED)}>Parameters:</div>
-            <pre className="font-mono text-[11px] leading-relaxed bg-muted/60 text-foreground p-2 rounded overflow-x-auto border border-border/60">
+            <div className="font-medium mb-1 text-muted-foreground">Parameters:</div>
+            <pre className="font-mono text-[11px] leading-relaxed bg-muted/50 text-foreground p-2 rounded-xl overflow-x-auto border border-border/60">
               {JSON.stringify(invocation.args, null, 2)}
             </pre>
           </div>
           {isComplete && result && !hasError && (
             <div>
-              <div className={cn("font-medium mb-1", TOOL_MUTED)}>Raw Result:</div>
-              <pre className="font-mono text-[11px] leading-relaxed bg-muted/60 text-foreground p-2 rounded overflow-x-auto max-h-48 border border-border/60">
+              <div className="font-medium mb-1 text-muted-foreground">Raw Result:</div>
+              <pre className="font-mono text-[11px] leading-relaxed bg-muted/50 text-foreground p-2 rounded-xl overflow-x-auto max-h-48 border border-border/60">
                 {formatResultPreview(result)}
               </pre>
             </div>
@@ -213,7 +208,7 @@ function ToolInvocationItem({ invocation }: { invocation: ToolInvocation }) {
 
       {/* Profiles grid */}
       {isComplete && profiles.length > 0 && (
-        <div className={cn("px-3 py-2 border-t bg-background", TOOL_BORDER)}>
+        <div className="px-4 py-3 border-t border-border/60 bg-background">
           <button
             onClick={() => setShowProfiles(!showProfiles)}
             className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-2"
