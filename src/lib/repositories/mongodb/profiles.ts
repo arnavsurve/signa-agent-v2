@@ -177,7 +177,9 @@ function transformProfile(raw: RawProfile): EnrichedProfile {
  * Build MongoDB match stage from search parameters.
  */
 function buildMatchStage(params: SearchProfilesParams): Record<string, unknown> {
-  const match: Record<string, unknown> = {};
+  const match: Record<string, unknown> = {
+    "metadata.complete": true,
+  };
 
   // Text search across name fields
   if (params.query) {
@@ -379,7 +381,7 @@ export async function findProfileByUserId(
   const db = await getPrimaryDb();
 
   const doc = await db.collection<RawProfile>(COLLECTION).findOne(
-    { user_id: String(userId) },
+    { user_id: String(userId), "metadata.complete": true },
     { projection: { _id: 0 } }
   );
 
@@ -398,7 +400,10 @@ export async function findProfileByScreenName(
   const normalized = screenName.replace(/^@/, "").toLowerCase();
 
   const doc = await db.collection<RawProfile>(COLLECTION).findOne(
-    { screen_name: { $regex: `^${normalized}$`, $options: "i" } },
+    {
+      screen_name: { $regex: `^${normalized}$`, $options: "i" },
+      "metadata.complete": true,
+    },
     { projection: { _id: 0 } }
   );
 
@@ -419,7 +424,7 @@ export async function findProfilesByUserIds(
   const docs = await db
     .collection<RawProfile>(COLLECTION)
     .find(
-      { user_id: { $in: stringIds } },
+      { user_id: { $in: stringIds }, "metadata.complete": true },
       { projection: { _id: 0 } }
     )
     .toArray();
@@ -436,7 +441,7 @@ export async function findProfileByLinkedInUrn(
   const db = await getPrimaryDb();
 
   const doc = await db.collection<RawProfile>(COLLECTION).findOne(
-    { "enriched_data.linkedin_urn": linkedinUrn },
+    { "enriched_data.linkedin_urn": linkedinUrn, "metadata.complete": true },
     { projection: { _id: 0 } }
   );
 
@@ -458,6 +463,7 @@ export async function findProfilesByCompany(params: {
 
   const match: Record<string, unknown> = {
     "enriched_data.work_experience": { $regex: company, $options: "i" },
+    "metadata.complete": true,
   };
 
   if (roles && roles.length > 0) {
@@ -528,6 +534,7 @@ export async function findProfilesByInvestor(params: {
 
   const match: Record<string, unknown> = {
     "enriched_data.investors": { $regex: investor, $options: "i" },
+    "metadata.complete": true,
   };
 
   if (stages && stages.length > 0) {
