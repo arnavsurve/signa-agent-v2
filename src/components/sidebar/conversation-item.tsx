@@ -53,10 +53,10 @@ export function ConversationItem({
   return (
     <div
       className={cn(
-        "group relative flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors min-w-0 overflow-hidden",
+        "group relative flex items-center gap-2 rounded-xl px-3 py-2 text-sm transition-colors min-w-0 overflow-hidden",
         isActive
-          ? "bg-accent text-accent-foreground"
-          : "hover:bg-accent/50 text-muted-foreground hover:text-foreground"
+          ? "bg-muted/50 text-foreground"
+          : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
       )}
     >
       {isEditing ? (
@@ -67,13 +67,13 @@ export function ConversationItem({
           onBlur={handleRename}
           onKeyDown={handleKeyDown}
           autoFocus
-          className="flex-1 min-w-0 bg-transparent border-b border-primary outline-none"
+          className="flex-1 min-w-0 bg-transparent border-b border-primary outline-none text-foreground"
         />
       ) : (
         <Link href={`/chat/${id}`} className="flex-1 min-w-0 overflow-hidden">
-          <div className="truncate font-medium">{title}</div>
+          <div className="truncate font-medium text-foreground">{title}</div>
           {preview && (
-            <div className="truncate text-xs text-muted-foreground">
+            <div className="truncate text-[11px] text-muted-foreground">
               {preview}
             </div>
           )}
@@ -85,7 +85,7 @@ export function ConversationItem({
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+            className="h-7 w-7 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
           >
             <MoreHorizontal className="h-4 w-4" />
             <span className="sr-only">More options</span>

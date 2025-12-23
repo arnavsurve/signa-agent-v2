@@ -92,7 +92,7 @@ export function ConversationList({
     <div className="space-y-4 min-w-0">
       {groups.map((group) => (
         <div key={group.label}>
-          <div className="px-3 py-1 text-xs font-medium text-muted-foreground">
+          <div className="px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">
             {group.label}
           </div>
           <div className="space-y-0.5">

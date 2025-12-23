@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Plus, LogOut, User, MessageSquare } from "lucide-react";
+import { Plus, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { ConversationList } from "./conversation-list";
 import { useAuth } from "@/contexts/auth-context";
 
@@ -153,40 +154,45 @@ export function ChatSidebar() {
   };
 
   return (
-    <div className="flex flex-col h-full w-full min-w-0 bg-muted/30 overflow-hidden">
+    <Card className="flex flex-col h-full w-full min-w-0 overflow-hidden rounded-xl border border-border/60 bg-background/80 shadow-none">
       {/* Header */}
-      <div className="p-4 border-b">
+      <CardHeader className="px-4 pt-3 pb-3 border-b border-border/60">
+        <div className="flex items-center justify-between">
+          <div className="text-sm font-semibold tracking-tight">Signa</div>
+        </div>
         <Button
           onClick={handleNewChat}
-          className="w-full justify-start gap-2"
-          variant="outline"
+          className="w-full justify-start gap-2 mt-4"
+          variant="secondary"
         >
           <Plus className="h-4 w-4" />
-          New Chat
+          New chat
         </Button>
-      </div>
+      </CardHeader>
 
       {/* Conversation List */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden py-2">
-        {isLoading ? (
-          <div className="px-3 py-8 text-center text-sm text-muted-foreground">
-            Loading...
-          </div>
-        ) : (
-          <ConversationList
-            conversations={conversations}
-            activeId={activeId}
-            onRename={handleRename}
-            onDelete={handleDelete}
-          />
-        )}
-      </div>
+      <CardContent className="flex-1 px-3 pb-3">
+        <div className="rounded-lg border border-border/60 bg-background h-full overflow-y-auto overflow-x-hidden px-2 py-3">
+          {isLoading ? (
+            <div className="px-3 py-8 text-center text-sm text-muted-foreground">
+              Loading...
+            </div>
+          ) : (
+            <ConversationList
+              conversations={conversations}
+              activeId={activeId}
+              onRename={handleRename}
+              onDelete={handleDelete}
+            />
+          )}
+        </div>
+      </CardContent>
 
       {/* User section */}
-      <div className="p-4 border-t">
-        <div className="flex items-center gap-3">
-          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-            <User className="h-4 w-4 text-primary" />
+      <CardFooter className="p-4 border-t border-border/60">
+        <div className="rounded-lg border border-border/60 bg-background px-3 py-2 flex items-center gap-3">
+          <div className="flex-shrink-0 w-9 h-9 rounded-full bg-foreground/5 flex items-center justify-center">
+            <User className="h-4 w-4 text-muted-foreground" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-sm font-medium truncate">
@@ -203,7 +209,7 @@ export function ChatSidebar() {
             <span className="sr-only">Logout</span>
           </Button>
         </div>
-      </div>
-    </div>
+      </CardFooter>
+    </Card>
   );
 }
