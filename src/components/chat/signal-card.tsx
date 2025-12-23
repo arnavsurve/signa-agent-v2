@@ -47,12 +47,8 @@ interface SignalCardProps {
 /**
  * Construct profile image URL from S3 if not provided.
  */
-function getProfileImageUrl(profile: ProfileData): string {
-  if (profile.profileImageUrl) {
-    return profile.profileImageUrl;
-  }
-  // Fallback to constructed S3 URL
-  return `https://signaimg.s3.amazonaws.com/profiles/${profile.userId}.jpg`;
+function getProfileImageUrl(profile: ProfileData): string | undefined {
+  return profile.profileImageUrl;
 }
 
 /**
@@ -79,6 +75,7 @@ function formatFunding(amount?: number): string {
 export function SignalCard({ profile, className, compact = false }: SignalCardProps) {
   const [showModal, setShowModal] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const profileImageUrl = getProfileImageUrl(profile);
 
   const primaryLocation = profile.locations?.[0] || profile.location || "";
   const primarySector = profile.sectors?.[0] || "";
@@ -98,9 +95,9 @@ export function SignalCard({ profile, className, compact = false }: SignalCardPr
         <div className={cn("flex items-start gap-3", compact && "flex-1 min-w-0")}>
           {/* Avatar */}
           <div className="relative flex-shrink-0">
-            {!imgError ? (
+            {!imgError && profileImageUrl ? (
               <img
-                src={getProfileImageUrl(profile)}
+                src={profileImageUrl}
                 alt={profile.name}
                 className="w-10 h-10 rounded-full object-cover bg-muted"
                 onError={() => setImgError(true)}

@@ -25,11 +25,8 @@ interface SignalModalProps {
 /**
  * Construct profile image URL from S3 if not provided.
  */
-function getProfileImageUrl(profile: ProfileData): string {
-  if (profile.profileImageUrl) {
-    return profile.profileImageUrl;
-  }
-  return `https://signaimg.s3.amazonaws.com/profiles/${profile.userId}.jpg`;
+function getProfileImageUrl(profile: ProfileData): string | undefined {
+  return profile.profileImageUrl;
 }
 
 /**
@@ -54,6 +51,7 @@ function formatFunding(amount?: number): string {
  */
 export function SignalModal({ profile, onClose }: SignalModalProps) {
   const [imgError, setImgError] = useState(false);
+  const profileImageUrl = getProfileImageUrl(profile);
 
   // Handle escape key
   useEffect(() => {
@@ -90,9 +88,9 @@ export function SignalModal({ profile, onClose }: SignalModalProps) {
           <div className="flex items-start gap-4">
             {/* Avatar */}
             <div className="relative flex-shrink-0">
-              {!imgError ? (
+              {!imgError && profileImageUrl ? (
                 <img
-                  src={getProfileImageUrl(profile)}
+                  src={profileImageUrl}
                   alt={profile.name}
                   className="w-16 h-16 rounded-full object-cover bg-muted"
                   onError={() => setImgError(true)}

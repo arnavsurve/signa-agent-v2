@@ -1,9 +1,9 @@
 "use client";
 
+import type { ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useProfileCache } from "@/contexts/profile-cache-context";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
 interface MarkdownTextProps {
@@ -12,10 +12,12 @@ interface MarkdownTextProps {
 }
 
 export function MarkdownText({ content, className }: MarkdownTextProps) {
-  const { getProfile } = useProfileCache();
+  const { getProfile, getProfileByUrl } = useProfileCache();
 
   return (
-    <div className={cn("prose prose-sm dark:prose-invert max-w-none", className)}>
+    <div
+      className={cn("prose prose-sm dark:prose-invert max-w-none", className)}
+    >
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
@@ -24,28 +26,59 @@ export function MarkdownText({ content, className }: MarkdownTextProps) {
             // Check if this is a profile link (x.com or twitter.com)
             const isProfileLink =
               href?.includes("x.com/") || href?.includes("twitter.com/");
+            const profileByUrl = href ? getProfileByUrl(href) : undefined;
 
-            if (isProfileLink && href) {
-              const screenName = extractScreenName(href);
-              const profile = screenName ? getProfile(screenName) : undefined;
+            if (profileByUrl && href) {
+              const profileImageUrl = getProfileImageUrl(profileByUrl);
+              const label = getProfileLabel(profileByUrl, children);
 
               return (
                 <a
                   href={href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-primary hover:underline"
+                  className="text-primary hover:underline"
+                  style={{ verticalAlign: "baseline" }}
+                >
+                  {profileImageUrl && (
+                    <img
+                      src={profileImageUrl}
+                      alt={label}
+                      className="inline-block h-6 w-6 rounded-full object-cover"
+                      loading="lazy"
+                      style={{ verticalAlign: "bottom", marginRight: "0.375rem" }}
+                    />
+                  )}
+                  {children}
+                </a>
+              );
+            }
+
+            if (isProfileLink && href) {
+              const screenName = extractScreenName(href);
+              const profile = screenName ? getProfile(screenName) : undefined;
+              const label = getProfileLabel(
+                profile,
+                children,
+                screenName || undefined,
+              );
+
+              return (
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                  style={{ verticalAlign: "baseline" }}
                 >
                   {profile?.profileImageUrl && (
-                    <Avatar className="w-4 h-4 inline-block">
-                      <AvatarImage
-                        src={profile.profileImageUrl}
-                        alt={profile.name || screenName || ""}
-                      />
-                      <AvatarFallback className="text-[8px]">
-                        {(profile.name || screenName || "?")[0].toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
+                    <img
+                      src={profile.profileImageUrl}
+                      alt={label}
+                      className="inline-block h-4 w-4 rounded-full object-cover"
+                      loading="lazy"
+                      style={{ verticalAlign: "bottom", marginRight: "0.25rem" }}
+                    />
                   )}
                   {children}
                 </a>
@@ -96,7 +129,10 @@ export function MarkdownText({ content, className }: MarkdownTextProps) {
             }
             return (
               <code
-                className={cn("block bg-muted p-3 rounded text-sm font-mono overflow-x-auto", className)}
+                className={cn(
+                  "block bg-muted p-3 rounded text-sm font-mono overflow-x-auto",
+                  className,
+                )}
                 {...props}
               >
                 {children}
@@ -144,4 +180,28 @@ export function MarkdownText({ content, className }: MarkdownTextProps) {
 function extractScreenName(url: string): string | null {
   const match = url.match(/(?:x\.com|twitter\.com)\/([^/?]+)/);
   return match ? match[1] : null;
+}
+
+function getProfileImageUrl(
+  profile: { profileImageUrl?: string } | undefined,
+): string | undefined {
+  return profile?.profileImageUrl;
+}
+
+function getProfileLabel(
+  profile: { name?: string; screenName?: string } | undefined,
+  children: ReactNode,
+  fallback?: string,
+): string {
+  const childText = Array.isArray(children)
+    ? children.filter((child) => typeof child === "string").join("")
+    : typeof children === "string"
+      ? children
+      : "";
+
+  if (profile?.name) return profile.name;
+  if (profile?.screenName) return profile.screenName;
+  if (childText) return childText;
+  if (fallback) return fallback;
+  return "?";
 }
