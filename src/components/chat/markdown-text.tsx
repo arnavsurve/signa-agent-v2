@@ -16,7 +16,10 @@ export function MarkdownText({ content, className }: MarkdownTextProps) {
 
   return (
     <div
-      className={cn("prose prose-sm dark:prose-invert max-w-none", className)}
+      className={cn(
+        "prose prose-sm dark:prose-invert max-w-none leading-relaxed prose-p:leading-relaxed prose-li:leading-relaxed",
+        className
+      )}
     >
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
@@ -37,7 +40,7 @@ export function MarkdownText({ content, className }: MarkdownTextProps) {
                   href={href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-primary hover:underline"
+                  className="text-primary underline underline-offset-2 hover:underline"
                   style={{ verticalAlign: "baseline" }}
                 >
                   {profileImageUrl && (
@@ -68,7 +71,7 @@ export function MarkdownText({ content, className }: MarkdownTextProps) {
                   href={href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-primary hover:underline"
+                  className="text-primary underline underline-offset-2 hover:underline"
                   style={{ verticalAlign: "baseline" }}
                 >
                   {profile?.profileImageUrl && (
@@ -90,7 +93,7 @@ export function MarkdownText({ content, className }: MarkdownTextProps) {
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary hover:underline"
+                className="text-primary underline underline-offset-2 hover:underline"
               >
                 {children}
               </a>
