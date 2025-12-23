@@ -17,7 +17,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { SignalCardGrid, type ProfileData } from "./signal-card";
+import { type ProfileData } from "./signal-card";
 
 interface ToolInvocation {
   toolCallId: string;
@@ -285,11 +285,7 @@ function ToolInvocationItem({ invocation }: { invocation: ToolInvocation }) {
             {profiles.length} profiles
           </button>
           {showProfiles && (
-            <SignalCardGrid
-              profiles={profiles}
-              compact={profiles.length > 4}
-              maxItems={8}
-            />
+            <ProfileLinkList profiles={profiles} maxItems={8} />
           )}
         </div>
       )}
@@ -384,4 +380,63 @@ function formatArgsSummary(args?: Record<string, unknown> | null): string {
   }
 
   return parts.join(" | ");
+}
+
+function ProfileLinkList({
+  profiles,
+  maxItems = 8,
+}: {
+  profiles: ProfileData[];
+  maxItems?: number;
+}) {
+  const visibleProfiles = profiles.slice(0, maxItems);
+
+  return (
+    <div className="space-y-2 text-xs font-mono">
+      {visibleProfiles.map((profile) => {
+        const label = getProfileLabel(profile);
+        const profileUrl = profile.profileUrl;
+
+        return (
+          <div key={`${profile.userId}-${profile.screenName}`} className="flex items-center gap-2">
+            {profile.profileImageUrl ? (
+              <img
+                src={profile.profileImageUrl}
+                alt={label}
+                className="h-5 w-5 rounded-full object-cover"
+                loading="lazy"
+              />
+            ) : (
+              <div className="h-5 w-5 rounded-full bg-muted flex items-center justify-center text-[10px] text-muted-foreground">
+                {(label || "?")[0].toUpperCase()}
+              </div>
+            )}
+            {profileUrl ? (
+              <a
+                href={profileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                {label}
+              </a>
+            ) : (
+              <span className="text-foreground">{label}</span>
+            )}
+          </div>
+        );
+      })}
+      {profiles.length > maxItems && (
+        <div className="text-muted-foreground">
+          +{profiles.length - maxItems} more results
+        </div>
+      )}
+    </div>
+  );
+}
+
+function getProfileLabel(profile: ProfileData): string {
+  if (profile.name) return profile.name;
+  if (profile.screenName) return profile.screenName;
+  return "Unknown";
 }
