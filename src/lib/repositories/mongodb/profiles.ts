@@ -166,9 +166,9 @@ function transformProfile(raw: RawProfile): EnrichedProfile {
     is_technical: enriched.is_technical,
     linkedin_url: enriched.linkedin_url,
     crunchbase_url: enriched.crunchbase_url,
-    // Profile URL (to be populated)
-    profile_url: raw.screen_name
-      ? `https://x.com/${raw.screen_name}`
+    // Profile URL (internal Signa search)
+    profile_url: raw.user_id
+      ? `https://app.signa.software/search?user_id=${raw.user_id}`
       : undefined,
   };
 }
