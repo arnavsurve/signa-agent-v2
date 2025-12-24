@@ -154,9 +154,9 @@ export function ChatSidebar() {
   };
 
   return (
-    <Card className="flex flex-col h-full w-full min-w-0 overflow-hidden rounded-xl border border-border/60 bg-background/80 shadow-none">
+    <Card className="flex flex-col h-full w-full min-w-0 overflow-hidden rounded-xl border border-border/60 bg-background/80 shadow-none p-6 space-y-6">
       {/* Header */}
-      <CardHeader className="px-4 pt-3 pb-3 border-b border-border/60">
+      <CardHeader className="p-0 border-b border-border/60">
         <div className="flex items-center justify-between">
           <div className="text-sm font-semibold tracking-tight">Signa</div>
         </div>
@@ -171,7 +171,7 @@ export function ChatSidebar() {
       </CardHeader>
 
       {/* Conversation List */}
-      <CardContent className="flex-1 px-3 pb-3">
+      <CardContent className="flex-1 p-0">
         <div className="rounded-lg border border-border/60 bg-background h-full overflow-y-auto overflow-x-hidden px-2 py-3">
           {isLoading ? (
             <div className="px-3 py-8 text-center text-sm text-muted-foreground">
@@ -189,7 +189,7 @@ export function ChatSidebar() {
       </CardContent>
 
       {/* User section */}
-      <CardFooter className="p-4 border-t border-border/60">
+      <CardFooter className="p-0 border-t border-border/60">
         <div className="rounded-lg border border-border/60 bg-background px-3 py-2 flex items-center gap-3">
           <div className="flex-shrink-0 w-9 h-9 rounded-full bg-foreground/5 flex items-center justify-center">
             <User className="h-4 w-4 text-muted-foreground" />
