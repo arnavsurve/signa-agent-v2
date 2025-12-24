@@ -148,3 +148,33 @@ export async function getUserSignalPreferences(
 
   return { liked, disliked };
 }
+
+/**
+ * Get set of user IDs that the user has liked.
+ */
+export async function getUserLikedSignalIds(
+  userId: number
+): Promise<Set<string>> {
+  const rows = await query<{ signal_user_id: string }>(
+    `SELECT signal_profile_user_id as signal_user_id
+    FROM user_signal_status
+    WHERE user_id = $1 AND status = 'liked'`,
+    [userId]
+  );
+  return new Set(rows.map((r) => r.signal_user_id));
+}
+
+/**
+ * Get set of user IDs that the user has disliked.
+ */
+export async function getUserDislikedSignalIds(
+  userId: number
+): Promise<Set<string>> {
+  const rows = await query<{ signal_user_id: string }>(
+    `SELECT signal_profile_user_id as signal_user_id
+    FROM user_signal_status
+    WHERE user_id = $1 AND status = 'disliked'`,
+    [userId]
+  );
+  return new Set(rows.map((r) => r.signal_user_id));
+}
