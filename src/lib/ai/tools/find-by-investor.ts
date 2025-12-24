@@ -89,7 +89,6 @@ Common investor names:
           linkedinUrl: p.linkedin_url,
           crunchbaseUrl: p.crunchbase_url,
           profileUrl: p.profile_url,
-          trendingScore: p.trending_score,
           followedByCount: p.followed_by_count,
           stealthStatus: p.stealth_status as "in" | "out" | null | undefined,
           recentBioChange: p.recent_bio_change,

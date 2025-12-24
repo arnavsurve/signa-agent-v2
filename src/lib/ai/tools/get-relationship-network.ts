@@ -72,7 +72,7 @@ function profileToResult(p: {
   linkedin_url?: string | null;
   crunchbase_url?: string | null;
   profile_url?: string | null;
-  trending_score?: number | null;
+
   followed_by_count?: number | null;
   stealth_status?: string | null;
   recent_bio_change?: boolean | null;
@@ -103,7 +103,6 @@ function profileToResult(p: {
     linkedinUrl: p.linkedin_url || undefined,
     crunchbaseUrl: p.crunchbase_url || undefined,
     profileUrl: p.profile_url || undefined,
-    trendingScore: p.trending_score || undefined,
     followedByCount: p.followed_by_count || undefined,
     stealthStatus: (p.stealth_status as "in" | "out" | null) || undefined,
     recentBioChange: p.recent_bio_change || undefined,

@@ -78,7 +78,6 @@ Use get_my_groups() first to discover available groups.`,
             screen_name: member.screenName,
             name: member.name,
             headline: member.headline,
-            trending_score: member.trendingScore,
           })),
           count: members.length,
         };
