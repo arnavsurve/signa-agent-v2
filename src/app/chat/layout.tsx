@@ -10,6 +10,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Menu } from "lucide-react";
+import { SidebarProvider } from "@/contexts/sidebar-context";
 
 export default function ChatLayout({
   children,
@@ -17,6 +18,7 @@ export default function ChatLayout({
   children: React.ReactNode;
 }) {
   return (
+    <SidebarProvider>
     <div className="h-screen app-shell">
       <div className="h-full px-3 py-4">
         <div className="grid h-full grid-cols-[280px_minmax(0,1fr)] gap-3 min-h-0">
@@ -62,5 +64,6 @@ export default function ChatLayout({
         </div>
       </div>
     </div>
+    </SidebarProvider>
   );
 }

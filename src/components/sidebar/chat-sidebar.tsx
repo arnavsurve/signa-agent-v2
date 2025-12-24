@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { ConversationList } from "./conversation-list";
 import { useAuth } from "@/contexts/auth-context";
+import { useSidebar } from "@/contexts/sidebar-context";
 
 interface Conversation {
   id: string;
@@ -25,6 +26,7 @@ export function ChatSidebar() {
     isLoading: authLoading,
     isAuthenticated,
   } = useAuth();
+  const { refreshKey } = useSidebar();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -83,7 +85,7 @@ export function ChatSidebar() {
       return;
     }
     fetchConversations();
-  }, [authLoading, fetchConversations, isAuthenticated]);
+  }, [authLoading, fetchConversations, isAuthenticated, refreshKey]);
 
   // Create new conversation
   const handleNewChat = async () => {

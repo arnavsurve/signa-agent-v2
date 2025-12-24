@@ -4,6 +4,7 @@ import { useChat, UIMessage } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useAuth } from "@/contexts/auth-context";
 import { useProfileCache } from "@/contexts/profile-cache-context";
+import { useSidebar } from "@/contexts/sidebar-context";
 import { MessageList } from "./message-list";
 import { Composer } from "./composer";
 import { useEffect, useRef, useState, useMemo, FormEvent } from "react";
@@ -54,10 +55,12 @@ export function ChatThread({
 }: ChatThreadProps) {
   const { getAccessToken } = useAuth();
   const { addProfiles } = useProfileCache();
+  const { refreshConversations } = useSidebar();
   const scrollRef = useRef<HTMLDivElement>(null);
   const hasHydratedRef = useRef(false);
   const hasAutoSentRef = useRef(false);
   const hasProfileHydratedRef = useRef(false);
+  const isFirstCompletionRef = useRef(true);
   const [input, setInput] = useState("");
 
   // Create transport with auth headers - memoized to avoid recreating on each render
@@ -100,6 +103,15 @@ export function ChatThread({
           }
         }
       }
+
+      // Refresh sidebar after first completion to show generated title
+      // Small delay to ensure the title has been saved to the database
+      if (isFirstCompletionRef.current) {
+        isFirstCompletionRef.current = false;
+        setTimeout(() => {
+          refreshConversations();
+        }, 1000);
+      }
     },
   });
 
@@ -109,6 +121,7 @@ export function ChatThread({
     hasHydratedRef.current = false;
     hasAutoSentRef.current = false;
     hasProfileHydratedRef.current = false;
+    isFirstCompletionRef.current = true;
   }, [conversationId]);
 
   useEffect(() => {
