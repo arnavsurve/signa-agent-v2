@@ -11,11 +11,13 @@ import {
   AnalyzeNetworkParams,
   AnalyzeNetworkResult,
   ProfileResult,
+  FollowedByDetail,
 } from "@/lib/ai/tools";
 import {
   searchProfiles,
   findProfileByUserId,
   findProfileByScreenName,
+  findProfilesByUserIds,
   EnrichedProfile,
 } from "@/lib/repositories/mongodb/profiles";
 import {
@@ -25,9 +27,13 @@ import {
 } from "@/lib/repositories/postgres/network";
 import {
   getFollowSignals,
-  getBioChangeSignals,
-  getTrendingPeople,
+  getSignalTimeline,
+  getNetworkFollowersForSignals,
 } from "@/lib/repositories/postgres/signals";
+import {
+  getSignalEnrichmentService,
+  EnrichedProfileWithSignals,
+} from "@/lib/services/signalEnrichment";
 
 /**
  * Create the services object that provides implementations for all tools.
@@ -74,8 +80,7 @@ function profileToResult(profile: EnrichedProfile): ProfileResult {
     linkedinUrl: profile.linkedin_url,
     crunchbaseUrl: profile.crunchbase_url,
     profileUrl: profile.profile_url,
-    // Signal context
-    trendingScore: profile.trending_score,
+    // Signal context (basic - use profileToResultWithSignals for enriched)
     followedByCount: profile.followed_by_count,
     stealthStatus: profile.stealth_status as "in" | "out" | null | undefined,
     recentBioChange: profile.recent_bio_change,
@@ -84,10 +89,70 @@ function profileToResult(profile: EnrichedProfile): ProfileResult {
 }
 
 /**
+ * Transform EnrichedProfileWithSignals to ProfileResult format with full signal context.
+ */
+function profileToResultWithSignals(
+  profile: EnrichedProfileWithSignals
+): ProfileResult {
+  const ctx = profile.signalContext;
+
+  return {
+    userId: parseInt(profile.user_id, 10) || 0,
+    screenName: profile.screen_name,
+    name: profile.name,
+    description: profile.description,
+    profileImageUrl: profile.profile_image_url,
+    followersCount: profile.followers_count,
+    location: profile.location,
+    profileType: profile.profile_type,
+    headline: profile.headline,
+    sectors: profile.sectors,
+    locations: profile.locations,
+    jobTitles: profile.job_titles,
+    workExperience: profile.work_experience?.map((company) => ({
+      company,
+      title: "",
+    })),
+    universities: profile.universities,
+    investors: profile.investors,
+    amountRaised: profile.amount_raised,
+    stages: profile.stages,
+    isTechnical: profile.is_technical,
+    linkedinUrl: profile.linkedin_url,
+    crunchbaseUrl: profile.crunchbase_url,
+    profileUrl: profile.profile_url,
+    // Enriched signal context
+    followedByCount: ctx.followedByCount,
+    followedBy: ctx.followedBy,
+    followedByDetails: ctx.followedByDetails.map(
+      (f): FollowedByDetail => ({
+        userId: f.userId,
+        screenName: f.screenName || undefined,
+        name: f.name,
+        profileUrl: f.profileUrl,
+        profileImageUrl: f.profileImageUrl,
+      })
+    ),
+    stealthStatus: ctx.stealthStatus?.type || null,
+    recentBioChange: ctx.recentBioChange ? true : false,
+    recentBioChangeDate: ctx.recentBioChange?.date,
+    totalSignals: ctx.totalSignals,
+    signalBreakdown: {
+      follows: ctx.signalBreakdown.follows,
+      bioChanges: ctx.signalBreakdown.bioChanges,
+      stealth: ctx.signalBreakdown.stealth,
+      linkedin: ctx.signalBreakdown.linkedin,
+    },
+    relevanceScore: profile.relevanceScore,
+  };
+}
+
+/**
  * Search for people with filters and signal context.
  */
 async function searchPeople(
-  params: SearchPeopleParams
+  params: SearchPeopleParams,
+  userId?: number
 ): Promise<SearchPeopleResult> {
   const {
     query,
@@ -124,8 +189,41 @@ async function searchPeople(
     page,
   });
 
-  // Transform to result format
-  const results = searchResult.results.map(profileToResult);
+  // If no userId provided, return basic results
+  if (!userId) {
+    return {
+      results: searchResult.results.map(profileToResult),
+      totalCount: searchResult.total_count,
+      page: searchResult.page,
+      hasMorePages: searchResult.has_more,
+      totalPages: Math.ceil(searchResult.total_count / limit),
+    };
+  }
+
+  // Enrich with signal context
+  const enrichmentService = getSignalEnrichmentService();
+  const enrichedProfiles = await enrichmentService.enrichProfilesWithSignals(
+    searchResult.results,
+    userId,
+    {
+      includeFollowedBy: true,
+      includeBioChanges: true,
+      includeStealth: true,
+      days: 30,
+    }
+  );
+
+  // Rank by relevance if sorting by relevance
+  let rankedProfiles = enrichedProfiles;
+  if (sortBy === "relevance") {
+    rankedProfiles = await enrichmentService.rankByRelevance(
+      enrichedProfiles,
+      userId
+    );
+  }
+
+  // Transform to result format with full signal context
+  const results = rankedProfiles.map(profileToResultWithSignals);
 
   return {
     results,
@@ -140,7 +238,8 @@ async function searchPeople(
  * Get detailed information for a single person.
  */
 async function getPersonDetails(
-  params: GetPersonDetailsParams
+  params: GetPersonDetailsParams,
+  userId?: number
 ): Promise<PersonDetails | null> {
   let profile: EnrichedProfile | null = null;
 
@@ -154,10 +253,78 @@ async function getPersonDetails(
     return null;
   }
 
+  // If no userId provided, return basic details
+  if (!userId) {
+    return {
+      profile: profileToResult(profile),
+      signalTimeline: [],
+      networkConnections: [],
+    };
+  }
+
+  // Enrich with signal context
+  const enrichmentService = getSignalEnrichmentService();
+  const [enrichedProfile] = await enrichmentService.enrichProfilesWithSignals(
+    [profile],
+    userId,
+    {
+      includeFollowedBy: true,
+      includeBioChanges: true,
+      includeStealth: true,
+      days: 90,
+    }
+  );
+
+  // Get signal timeline
+  const signalTimeline = params.includeTimeline
+    ? await getSignalTimeline(profile.user_id, 90)
+    : [];
+
+  // Get network connections (who from user's network follows this person)
+  const networkConnectionsMap = params.includeNetworkConnections
+    ? await getNetworkFollowersForSignals([profile.user_id], userId)
+    : new Map();
+
+  const networkConnections = networkConnectionsMap.get(profile.user_id) || [];
+
+  // Enrich network connections with profile data
+  const connectionUserIds = networkConnections.map(
+    (c: { userId: string }) => c.userId
+  );
+  const connectionProfiles =
+    connectionUserIds.length > 0
+      ? await findProfilesByUserIds(connectionUserIds)
+      : [];
+  const connectionProfilesMap = new Map(
+    connectionProfiles.map((p) => [p.user_id, p])
+  );
+
   return {
-    profile: profileToResult(profile),
-    signalTimeline: [], // TODO: Fetch from signals table
-    networkConnections: [], // TODO: Fetch from relationships
+    profile: profileToResultWithSignals(enrichedProfile),
+    signalTimeline: signalTimeline.map((e) => ({
+      eventType: e.eventType,
+      actor: e.actor || undefined,
+      actorId: e.actorId || undefined,
+      eventDate: e.eventDate.toISOString(),
+      details: e.details || undefined,
+    })),
+    networkConnections: networkConnections.map(
+      (c: {
+        userId: string;
+        screenName: string | null;
+        followedDate: Date;
+      }) => {
+        const connProfile = connectionProfilesMap.get(c.userId);
+        return {
+          userId: c.userId,
+          screenName: c.screenName || undefined,
+          name: connProfile?.name || c.screenName || "Unknown",
+          profileUrl:
+            connProfile?.profile_url || `https://twitter.com/${c.screenName}`,
+          followedDate: c.followedDate.toISOString(),
+        };
+      }
+    ),
   };
 }
 
@@ -208,18 +375,104 @@ async function getUserGroupsService(userId: number): Promise<Group[]> {
 }
 
 /**
- * Get members of a group.
+ * Ranking options for group members.
+ */
+type GroupMemberRanking =
+  | "default"
+  | "network_connections"
+  | "recent_activity";
+
+/**
+ * Get members of a group with enriched signal context.
  */
 async function getGroupMembersService(
   groupId: number,
-  userId: number
+  userId: number,
+  options?: { ranking?: GroupMemberRanking; limit?: number }
 ): Promise<GroupMember[]> {
+  const { ranking = "default", limit = 50 } = options || {};
+
+  // Get basic member info from database
   const members = await getGroupMembersDb(groupId, userId);
-  return members.map((m) => ({
-    userId: m.user_id,
-    screenName: m.screen_name,
-    name: m.name,
-  }));
+
+  if (members.length === 0) {
+    return [];
+  }
+
+  // Fetch full profiles for members
+  const memberUserIds = members.map((m) => String(m.user_id));
+  const profiles = await findProfilesByUserIds(memberUserIds);
+
+  if (profiles.length === 0) {
+    // Fall back to basic member info if no profiles found
+    return members.slice(0, limit).map((m) => ({
+      userId: m.user_id,
+      screenName: m.screen_name,
+      name: m.name,
+    }));
+  }
+
+  // Enrich with signal context
+  const enrichmentService = getSignalEnrichmentService();
+  const enrichedProfiles = await enrichmentService.enrichProfilesWithSignals(
+    profiles,
+    userId,
+    {
+      includeFollowedBy: true,
+      includeBioChanges: true,
+      days: 30,
+    }
+  );
+
+  // Rank by specified method
+  let rankedProfiles = enrichedProfiles;
+
+  if (ranking === "network_connections") {
+    rankedProfiles = [...enrichedProfiles].sort(
+      (a, b) =>
+        (b.signalContext?.followedByCount || 0) -
+        (a.signalContext?.followedByCount || 0)
+    );
+  } else if (ranking === "recent_activity") {
+    rankedProfiles = [...enrichedProfiles].sort(
+      (a, b) =>
+        (b.signalContext?.totalSignals || 0) -
+        (a.signalContext?.totalSignals || 0)
+    );
+  } else {
+    // Default: relevance ranking
+    rankedProfiles = await enrichmentService.rankByRelevance(
+      enrichedProfiles,
+      userId
+    );
+  }
+
+  // Transform to GroupMember format with enriched data
+  return rankedProfiles.slice(0, limit).map((p) => {
+    const ctx = p.signalContext;
+    return {
+      userId: parseInt(p.user_id, 10) || 0,
+      screenName: p.screen_name,
+      name: p.name,
+      headline: p.headline,
+      profileUrl: p.profile_url,
+      profileImageUrl: p.profile_image_url,
+      // Signal context
+      followedByCount: ctx.followedByCount,
+      followedBy: ctx.followedBy,
+      followedByDetails: ctx.followedByDetails.map((f) => ({
+        userId: f.userId,
+        screenName: f.screenName || undefined,
+        name: f.name,
+        profileUrl: f.profileUrl,
+        profileImageUrl: f.profileImageUrl,
+      })),
+      recentBioChange: ctx.recentBioChange ? true : false,
+      recentBioChangeDate: ctx.recentBioChange?.date,
+      totalSignals: ctx.totalSignals,
+      relevanceScore: p.relevanceScore,
+    };
+  });
 }
 
 /**
@@ -228,60 +481,7 @@ async function getGroupMembersService(
 async function analyzeNetwork(
   params: AnalyzeNetworkParams
 ): Promise<AnalyzeNetworkResult> {
-  const { analysisType, sectors, locations, days = 7, limit = 50 } = params;
-
-  if (analysisType === "trending") {
-    // Get trending people based on signal velocity
-    const trending = await getTrendingPeople({ days, limit: limit * 2 });
-
-    if (trending.length === 0) {
-      return {
-        analysisType,
-        profiles: [],
-        insights: [`No trending profiles found in the last ${days} days`],
-      };
-    }
-
-    // Fetch full profiles from MongoDB with optional filters
-    const userIds = trending.map((t) => t.user_id.toString());
-    const searchResult = await searchProfiles({
-      user_ids: userIds,
-      sectors,
-      locations,
-      sort_by: "trending",
-      limit,
-    });
-
-    // Merge trending scores with profiles
-    const trendingMap = new Map(
-      trending.map((t) => [t.user_id.toString(), t.trending_score])
-    );
-
-    const profiles = searchResult.results.map((p) => ({
-      ...profileToResult(p),
-      trendingScore: trendingMap.get(p.user_id) || p.trending_score,
-    }));
-
-    // Sort by trending score
-    profiles.sort((a, b) => (b.trendingScore || 0) - (a.trendingScore || 0));
-
-    return {
-      analysisType,
-      profiles: profiles.slice(0, limit),
-      insights: [
-        `Found ${profiles.length} trending profiles in the last ${days} days`,
-        profiles.length > 0
-          ? `Top trending: ${profiles[0].name || profiles[0].screenName} with score ${profiles[0].trendingScore}`
-          : "",
-      ].filter(Boolean),
-      metrics: {
-        totalTrending: trending.length,
-        averageScore:
-          profiles.reduce((sum, p) => sum + (p.trendingScore || 0), 0) /
-          Math.max(profiles.length, 1),
-      },
-    };
-  }
+  const { analysisType, sectors, locations, limit = 50 } = params;
 
   if (analysisType === "influencers") {
     // Find high-connection nodes (most followed_by_count)
