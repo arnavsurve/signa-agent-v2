@@ -14,8 +14,8 @@ const getAggregatedFeedSignalsSchema = z.object({
     .optional()
     .describe("Specific feed IDs to aggregate (default: all user feeds)"),
   ranking: z
-    .enum(["network_connections", "trending", "recent_activity", "funding"])
-    .default("trending")
+    .enum(["network_connections", "recent_activity", "funding"])
+    .default("recent_activity")
     .describe("How to rank the aggregated results"),
   days: z
     .number()
@@ -52,7 +52,7 @@ function profileToResult(p: {
   linkedin_url?: string | null;
   crunchbase_url?: string | null;
   profile_url?: string | null;
-  trending_score?: number | null;
+
   followed_by_count?: number | null;
   stealth_status?: string | null;
   recent_bio_change?: boolean | null;
@@ -83,7 +83,6 @@ function profileToResult(p: {
     linkedinUrl: p.linkedin_url || undefined,
     crunchbaseUrl: p.crunchbase_url || undefined,
     profileUrl: p.profile_url || undefined,
-    trendingScore: p.trending_score || undefined,
     followedByCount: p.followed_by_count || undefined,
     stealthStatus: (p.stealth_status as "in" | "out" | null) || undefined,
     recentBioChange: p.recent_bio_change || undefined,
@@ -160,7 +159,6 @@ Use this tool when:
 
 This tool combines results from multiple feeds, deduplicates them, and ranks by the specified metric:
 - network_connections: Most followed by user's tracked network
-- trending: Highest recent signal velocity (accelerating attention)
 - recent_activity: Most recent activity
 - funding: Highest funding amount (for founders)`,
 
@@ -223,7 +221,7 @@ This tool combines results from multiple feeds, deduplicates them, and ranks by 
         );
 
         // Fetch full profiles with appropriate sorting
-        let sortBy: "trending" | "network_connections" | "funding" | "recent_activity" = "trending";
+        let sortBy: "network_connections" | "funding" | "recent_activity" = "recent_activity";
         if (params.ranking === "funding") sortBy = "funding";
         else if (params.ranking === "network_connections") sortBy = "network_connections";
         else if (params.ranking === "recent_activity") sortBy = "recent_activity";
@@ -241,8 +239,8 @@ This tool combines results from multiple feeds, deduplicates them, and ranks by 
             recentSignals: signalCounts.get(p.user_id) || 0,
           }));
 
-        // Re-sort by signal count if ranking by trending/recent
-        if (params.ranking === "trending" || params.ranking === "recent_activity") {
+        // Re-sort by signal count if ranking by recent activity
+        if (params.ranking === "recent_activity") {
           profiles.sort((a, b) => (b.recentSignals || 0) - (a.recentSignals || 0));
         }
 

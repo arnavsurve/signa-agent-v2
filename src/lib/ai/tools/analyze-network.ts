@@ -7,9 +7,9 @@ import { ToolServices, UserContext } from "./index";
  */
 const analyzeNetworkSchema = z.object({
   analysis_type: z
-    .enum(["trending", "influencers", "clusters"])
+    .enum(["influencers", "clusters"])
     .describe(
-      "Type of analysis: 'trending' for velocity/spikes, 'influencers' for high-connection nodes, 'clusters' for related groups"
+      "Type of analysis: 'influencers' for high-connection nodes, 'clusters' for related groups"
     ),
   sectors: z
     .array(z.string())
@@ -19,10 +19,6 @@ const analyzeNetworkSchema = z.object({
     .array(z.string())
     .optional()
     .describe("Filter analysis to specific locations"),
-  days: z
-    .number()
-    .default(7)
-    .describe("Time window for analysis in days"),
   limit: z
     .number()
     .default(50)
@@ -40,12 +36,10 @@ export function createAnalyzeNetworkTool(
     description: `Analyze network patterns and dynamics.
 
 Analysis types:
-- **trending**: Find profiles with accelerating activity (spike in followers, bio changes, etc.)
 - **influencers**: Find high-connection nodes in the network (most followed_by_count)
 - **clusters**: Identify groups of related profiles based on shared connections
 
 Use this for:
-- "Who's trending?" queries
 - Finding influential people in a sector
 - Discovering network clusters and communities
 
@@ -59,7 +53,6 @@ Returns profiles with relevant metrics for the analysis type.`,
           analysisType: params.analysis_type,
           sectors: params.sectors,
           locations: params.locations,
-          days: params.days,
           limit: params.limit,
         });
 

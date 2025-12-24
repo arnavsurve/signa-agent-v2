@@ -68,10 +68,6 @@ const findPeopleSchema = z.object({
     .number()
     .default(0)
     .describe("Minimum number of network connections (followed_by_count)"),
-  min_trending_score: z
-    .number()
-    .optional()
-    .describe("Minimum trending score (0-10 scale, >7 is very hot)"),
   recent_activity_days: z
     .number()
     .optional()
@@ -85,7 +81,7 @@ const findPeopleSchema = z.object({
     .default(0)
     .describe("Minimum number of bio changes in the signal window"),
   sort_by: z
-    .enum(["relevance", "trending", "network_connections", "funding", "recent_activity"])
+    .enum(["relevance", "network_connections", "funding", "recent_activity"])
     .default("relevance")
     .describe("Sort order for results"),
   limit: z
@@ -109,17 +105,16 @@ DEFAULT: Searches the ENTIRE global network.
 ONLY set in_my_network=True if user wants to scope to THEIR network (e.g., "in my network", "people I track", "my connections").
 
 Signal filters use OR logic for audience filters (in_my_network, recent_bio_change, stealth_status) and
-AND logic for thresholds (min_network_connections, min_trending_score, min_bio_change_count, recent_activity_days).
+AND logic for thresholds (min_network_connections, min_bio_change_count, recent_activity_days).
 Professional filters AND together (sectors + locations = must match both).
 
 Use cases:
 - Stealth entries: set stealth_status="in" (or "out")
 - Bio changes: recent_bio_change=True and/or min_bio_change_count>0
-- Trending spikes: sort_by="trending" with optional min_trending_score
 - Tracked updates: provide recent_activity_days (requires user_id)
 - Classic search: combine sectors, locations, companies, profile_types (['Founder', 'Investor'])
 
-Sort options: "relevance" (default), "trending", "network_connections", "funding", "recent_activity".
+Sort options: "relevance" (default), "network_connections", "funding", "recent_activity".
 
 PAGINATION: Use page parameter to fetch additional results. Default limit=50 per page.
 When total_count > limit, call again with page=2, page=3, etc. to get all results.
@@ -129,7 +124,7 @@ Returns: Complete enriched profiles including:
 - Professional: profile_type, headline, sectors, locations, job_titles, work_experience, universities
 - Funding: amount_raised, stages, investors, is_technical
 - Links: linkedin_url, crunchbase_url
-- Signal context: followed_by (list of @handles), followed_by_count, trending_score, recent_bio_change, stealth_status, total_signals`,
+- Signal context: followed_by (list of @handles), followed_by_count, recent_bio_change, stealth_status, total_signals`,
 
     inputSchema: findPeopleSchema,
 
@@ -151,7 +146,6 @@ Returns: Complete enriched profiles including:
           recentBioChange: params.recent_bio_change,
           stealthStatus: params.stealth_status,
           minNetworkConnections: params.min_network_connections,
-          minTrendingScore: params.min_trending_score,
           recentActivityDays: params.recent_activity_days,
           signalDays: params.signal_days,
           minBioChangeCount: params.min_bio_change_count,
