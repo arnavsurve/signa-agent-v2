@@ -51,11 +51,10 @@ export interface SearchPeopleParams {
   recentBioChange?: boolean;
   stealthStatus?: "in" | "out" | null;
   minNetworkConnections?: number;
-  minTrendingScore?: number;
   recentActivityDays?: number;
   signalDays?: number;
   minBioChangeCount?: number;
-  sortBy?: "relevance" | "trending" | "network_connections" | "funding" | "recent_activity";
+  sortBy?: "relevance" | "network_connections" | "funding" | "recent_activity";
   limit?: number;
   page?: number;
   userId?: number;
@@ -92,15 +91,14 @@ export interface ProfileResult {
   linkedinUrl?: string;
   crunchbaseUrl?: string;
   profileUrl?: string;
+  // Signal context
   followedByCount?: number;
   followedBy?: string[];
   followedByDetails?: FollowedByDetail[];
-  trendingScore?: number;
-  spikeRatio?: number;
   signalsRecent?: number;
-  signalsPrevious?: number;
   latestSignalDate?: string;
   recentBioChange?: boolean;
+  recentBioChangeDate?: string;
   bioChangeCount?: number;
   firstBioChange?: string;
   stealthStatus?: "in" | "out" | null;
@@ -108,6 +106,7 @@ export interface ProfileResult {
   signalBreakdown?: Record<string, number>;
   recentSignals?: number;
   latestActivityDate?: string;
+  relevanceScore?: number;
 }
 
 export interface WorkExperience {
@@ -119,15 +118,18 @@ export interface WorkExperience {
 }
 
 export interface FollowedByDetail {
-  userId: number;
-  screenName: string;
+  userId: number | string;
+  screenName?: string;
   name: string;
   profileUrl?: string;
+  profileImageUrl?: string;
 }
 
 export interface GetPersonDetailsParams {
   userId?: number;
   screenName?: string;
+  includeTimeline?: boolean;
+  includeNetworkConnections?: boolean;
 }
 
 export interface PersonDetails {
@@ -137,16 +139,19 @@ export interface PersonDetails {
 }
 
 export interface SignalEvent {
-  date: string;
-  type: string;
-  description?: string;
+  eventType: string;
+  actor?: string;
+  actorId?: string;
+  eventDate: string;
+  details?: Record<string, unknown>;
 }
 
 export interface NetworkConnection {
-  userId: number;
-  screenName: string;
+  userId: number | string;
+  screenName?: string;
   name: string;
-  relationship: "follows" | "followed_by";
+  profileUrl?: string;
+  followedDate?: string;
 }
 
 export interface Feed {
@@ -178,14 +183,22 @@ export interface GroupMember {
   screenName: string;
   name: string;
   headline?: string;
-  trendingScore?: number;
+  profileUrl?: string;
+  profileImageUrl?: string;
+  // Signal context
+  followedByCount?: number;
+  followedBy?: string[];
+  followedByDetails?: FollowedByDetail[];
+  recentBioChange?: boolean;
+  recentBioChangeDate?: string;
+  totalSignals?: number;
+  relevanceScore?: number;
 }
 
 export interface AnalyzeNetworkParams {
-  analysisType: "trending" | "influencers" | "clusters";
+  analysisType: "influencers" | "clusters";
   sectors?: string[];
   locations?: string[];
-  days?: number;
   limit?: number;
 }
 

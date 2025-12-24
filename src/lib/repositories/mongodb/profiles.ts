@@ -78,7 +78,6 @@ export interface EnrichedProfile {
   linkedin_url?: string;
   crunchbase_url?: string;
   // Signal context (populated by enrichment)
-  trending_score?: number;
   followed_by_count?: number;
   stealth_status?: string;
   recent_bio_change?: boolean;
@@ -116,7 +115,7 @@ export interface SearchProfilesParams {
   page?: number;
   limit?: number;
   // Sorting
-  sort_by?: "relevance" | "trending" | "network_connections" | "funding" | "recent_activity";
+  sort_by?: "relevance" | "network_connections" | "funding" | "recent_activity";
 }
 
 /**
@@ -296,8 +295,6 @@ function getSortStage(sortBy?: string): Record<string, 1 | -1> {
       return { "enriched_data.amount_raised": -1 };
     case "network_connections":
       return { followers_count: -1 };
-    case "trending":
-      return { "metadata.created_at": -1 }; // Proxy for trending
     case "recent_activity":
       return { "metadata.created_at": -1 };
     case "relevance":
