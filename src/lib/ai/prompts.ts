@@ -165,3 +165,19 @@ Rules:
 - Quote exact constraints when provided (e.g., 'only technical founders')
 - Do NOT include verbose profile data or raw tool payloads
 - Track seen_signal_ids separately (not in summary)`;
+
+/**
+ * Prompt for generating a conversation title.
+ * Used after the first assistant response to create a descriptive title.
+ */
+export const TITLE_GENERATION_PROMPT = `Generate a short, descriptive title for this conversation based on the user's first message and the assistant's response.
+
+Rules:
+- Maximum 50 characters
+- Be specific and descriptive about the topic
+- Use title case
+- No quotes, punctuation at the end, or special characters
+- Focus on the user's intent or query topic
+- Examples: "AI Founders in SF", "Trending Tech Executives", "Series A Companies Analysis"
+
+Return ONLY the title, nothing else.`;
