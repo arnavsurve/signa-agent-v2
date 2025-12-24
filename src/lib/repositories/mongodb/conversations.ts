@@ -103,12 +103,12 @@ export async function listConversations(
 }
 
 /**
- * Update a conversation's title.
+ * Update a conversation's title and/or first message preview.
  */
 export async function updateConversation(
   conversationId: string,
   userId: number,
-  updates: { title?: string }
+  updates: { title?: string; first_message_preview?: string }
 ): Promise<boolean> {
   const db = await getAgentDb();
 

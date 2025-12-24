@@ -7,7 +7,8 @@ import { ContextSession } from "@/lib/ai/context/session";
 import { createTools } from "@/lib/ai/tools";
 import { createToolServices } from "@/lib/services";
 import { createMessage } from "@/lib/repositories/mongodb/messages";
-import { touchConversation } from "@/lib/repositories/mongodb/conversations";
+import { touchConversation, updateConversation, getConversation } from "@/lib/repositories/mongodb/conversations";
+import { generateConversationTitle } from "@/lib/ai/title";
 import type { ToolEvent } from "@/lib/types";
 
 export const maxDuration = 60; // Allow up to 60s for Pro tier
@@ -147,6 +148,37 @@ export async function POST(req: NextRequest) {
 
         // Update conversation timestamp
         await touchConversation(conversationId, userId);
+
+        // Generate title for new conversations (first exchange)
+        // Check if this is the first user message (only 1 user message in the array)
+        const userMessages = messages.filter((m) => m.role === "user");
+        if (userMessages.length === 1) {
+          // Get the conversation to check if it still has the default title
+          const conversation = await getConversation(conversationId, userId);
+          if (conversation && conversation.title === "New Conversation") {
+            // Extract the first user message text
+            const firstUserMessage = userMessages[0];
+            const textPart = firstUserMessage.parts?.find((p) => p.type === "text") as
+              | { type: "text"; text: string }
+              | undefined;
+            const userText = textPart?.text || "";
+
+            if (userText && event.text) {
+              // Generate title using LLM
+              const generatedTitle = await generateConversationTitle(
+                userText,
+                event.text
+              );
+
+              if (generatedTitle) {
+                await updateConversation(conversationId, userId, {
+                  title: generatedTitle,
+                  first_message_preview: userText.slice(0, 100),
+                });
+              }
+            }
+          }
+        }
 
         // Record usage metrics
         if (usage) {
