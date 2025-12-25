@@ -9,6 +9,8 @@ export interface ProfileUrlData {
   linkedinUrl?: string | null;
   twitterUrl?: string | null;
   twitterScreenName?: string | null;
+  /** If true, always use Signa app URL when userId is available */
+  preferSignaUrl?: boolean;
 }
 
 /**
@@ -23,7 +25,12 @@ export interface ProfileUrlData {
  * @returns Best available profile URL
  */
 export function getProfileUrl(data: ProfileUrlData): string {
-  // Try LinkedIn first
+  // If metadata is complete or preferSignaUrl is set, use Signa app URL
+  if ((data.metadataComplete || data.preferSignaUrl) && data.userId) {
+    return `https://app.signa.software/search?user_id=${data.userId}`;
+  }
+
+  // Try LinkedIn
   if (data.linkedinUrl) {
     return data.linkedinUrl;
   }

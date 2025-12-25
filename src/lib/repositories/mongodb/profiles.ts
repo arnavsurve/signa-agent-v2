@@ -196,10 +196,16 @@ function transformProfile(raw: RawProfile): EnrichedProfile {
           date: extractDateString(c.after?.date),
         },
       })),
-    // Profile URL (internal Signa search)
-    profile_url: raw.user_id
+    // Profile URL - use Signa app URL if complete, otherwise fallback to external links
+    profile_url: (raw.metadata?.complete && raw.user_id)
       ? `https://app.signa.software/search?user_id=${raw.user_id}`
-      : undefined,
+      : enriched.linkedin_url
+        ? enriched.linkedin_url
+        : raw.screen_name
+          ? `https://x.com/${raw.screen_name}`
+          : raw.user_id
+            ? `https://app.signa.software/search?user_id=${raw.user_id}`
+            : undefined,
   };
 }
 
