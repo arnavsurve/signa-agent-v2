@@ -16,7 +16,6 @@ interface ConversationItemProps {
   id: string;
   title: string;
   preview?: string;
-  updatedAt: Date;
   isActive: boolean;
   onRename: (id: string, newTitle: string) => void;
   onDelete: (id: string) => void;
@@ -26,7 +25,6 @@ export function ConversationItem({
   id,
   title,
   preview,
-  updatedAt,
   isActive,
   onRename,
   onDelete,

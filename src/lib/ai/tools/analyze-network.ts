@@ -30,6 +30,7 @@ const analyzeNetworkSchema = z.object({
  */
 export function createAnalyzeNetworkTool(
   services: ToolServices,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _context: UserContext
 ): Tool {
   return tool({

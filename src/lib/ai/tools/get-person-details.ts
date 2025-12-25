@@ -21,6 +21,7 @@ const getPersonDetailsSchema = z.object({
  */
 export function createGetPersonDetailsTool(
   services: ToolServices,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _context: UserContext
 ) {
   return tool({

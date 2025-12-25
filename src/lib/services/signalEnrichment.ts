@@ -29,10 +29,6 @@ import {
   extractProfileUrlData,
 } from "@/lib/utils/profileUrls";
 
-// =============================================================================
-// Types
-// =============================================================================
-
 /**
  * Details about a follower from the user's network.
  */
@@ -84,10 +80,6 @@ export interface RankingOptions {
   boostNetwork?: boolean;
   boostLikedSimilar?: boolean;
 }
-
-// =============================================================================
-// SignalEnrichmentService
-// =============================================================================
 
 /**
  * Service for enriching profiles with signal context from PostgreSQL.
@@ -165,22 +157,16 @@ export class SignalEnrichmentService {
       }
     }
 
-    // Build enriched profiles
-    return profiles.map((profile) => {
-      const odlUserId = profile.user_id;
-      const signalContext = this.buildSignalContext(odlUserId, {
+    return profiles.map((profile) => ({
+      ...profile,
+      signalContext: this.buildSignalContext(profile.user_id, {
         networkFollowersMap,
         signalCountsMap,
         bioChangesMap,
         stealthStatusMap,
         followerProfilesMap,
-      });
-
-      return {
-        ...profile,
-        signalContext,
-      };
-    });
+      }),
+    }));
   }
 
   /**
@@ -277,18 +263,15 @@ export class SignalEnrichmentService {
     return scoredProfiles;
   }
 
-  /**
-   * Build signal context for a single profile.
-   */
   private buildSignalContext(
-    odlUserId: string,
+    userId: string,
     data: {
       networkFollowersMap: Map<string, NetworkFollower[]>;
       signalCountsMap: Map<string, SignalBreakdown>;
-      bioChangesMap: Map<string, { odlUserId: string; changeDate: Date }>;
+      bioChangesMap: Map<string, { userId: string; changeDate: Date }>;
       stealthStatusMap: Map<
         string,
-        { odlUserId: string; type: "in" | "out"; date: Date; profileUrl: string | null }
+        { userId: string; type: "in" | "out"; date: Date; profileUrl: string | null }
       >;
       followerProfilesMap: Map<string, EnrichedProfile>;
     }
@@ -301,55 +284,46 @@ export class SignalEnrichmentService {
       followerProfilesMap,
     } = data;
 
-    // Network followers
-    const followers = networkFollowersMap.get(odlUserId) || [];
+    const followers = networkFollowersMap.get(userId) || [];
     const followedBy = followers
       .map((f) => f.screenName)
       .filter((s): s is string => !!s);
 
-    // Enrich follower details with profile data
     const followedByDetails: FollowedByDetail[] = followers.map((follower) => {
       const followerProfile = followerProfilesMap.get(follower.userId);
-
-      let profileUrl: string;
-      let name: string;
-      let profileImageUrl: string | undefined;
-
       if (followerProfile) {
-        profileUrl = getProfileUrl(extractProfileUrlData({
-          user_id: followerProfile.user_id,
-          linkedin_url: followerProfile.linkedin_url,
-          screen_name: followerProfile.screen_name,
-        }));
-        name = followerProfile.name || follower.screenName || "Unknown";
-        profileImageUrl = followerProfile.profile_image_url;
-      } else {
-        // Fallback: generate profile URL with limited info
-        profileUrl = follower.screenName
-          ? `https://twitter.com/${follower.screenName}`
-          : `https://app.signa.software/search?user_id=${follower.userId}`;
-        name = follower.screenName || "Unknown";
+        return {
+          userId: follower.userId,
+          screenName: follower.screenName,
+          name: followerProfile.name || follower.screenName || "Unknown",
+          profileUrl: getProfileUrl(extractProfileUrlData({
+            user_id: followerProfile.user_id,
+            linkedin_url: followerProfile.linkedin_url,
+            screen_name: followerProfile.screen_name,
+          })),
+          profileImageUrl: followerProfile.profile_image_url,
+          followedDate: follower.followedDate,
+          source: follower.source,
+        };
       }
-
       return {
         userId: follower.userId,
         screenName: follower.screenName,
-        name,
-        profileUrl,
-        profileImageUrl,
+        name: follower.screenName || "Unknown",
+        profileUrl: follower.screenName
+          ? `https://twitter.com/${follower.screenName}`
+          : `https://app.signa.software/search?user_id=${follower.userId}`,
         followedDate: follower.followedDate,
         source: follower.source,
       };
     });
 
-    // Bio changes
-    const bioChange = bioChangesMap.get(odlUserId);
+    const bioChange = bioChangesMap.get(userId);
     const recentBioChange = bioChange
       ? { date: bioChange.changeDate.toISOString() }
       : null;
 
-    // Stealth status
-    const stealth = stealthStatusMap.get(odlUserId);
+    const stealth = stealthStatusMap.get(userId);
     const stealthStatus = stealth
       ? {
           type: stealth.type,
@@ -358,8 +332,7 @@ export class SignalEnrichmentService {
         }
       : null;
 
-    // Signal counts
-    const signalBreakdown = signalCountsMap.get(odlUserId) || {
+    const signalBreakdown = signalCountsMap.get(userId) || {
       follows: 0,
       bioChanges: 0,
       stealth: 0,
@@ -403,15 +376,8 @@ export class SignalEnrichmentService {
   }
 }
 
-// =============================================================================
-// Singleton instance
-// =============================================================================
-
 let signalEnrichmentServiceInstance: SignalEnrichmentService | null = null;
 
-/**
- * Get the singleton SignalEnrichmentService instance.
- */
 export function getSignalEnrichmentService(): SignalEnrichmentService {
   if (!signalEnrichmentServiceInstance) {
     signalEnrichmentServiceInstance = new SignalEnrichmentService();

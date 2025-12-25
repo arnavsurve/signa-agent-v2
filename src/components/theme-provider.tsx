@@ -30,11 +30,11 @@ function getPreferredTheme(): Theme {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("light");
-
-  useEffect(() => {
-    setThemeState(getPreferredTheme());
-  }, []);
+  // Initialize with a function to avoid the useEffect setState issue
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window === "undefined") return "light";
+    return getPreferredTheme();
+  });
 
   useEffect(() => {
     const root = document.documentElement;

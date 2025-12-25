@@ -506,7 +506,8 @@ export async function findProfilesByCompany(params: {
   limit?: number;
   page?: number;
 }): Promise<SearchResult> {
-  const { company, current_only = true, roles, sectors, limit = 50, page = 1 } = params;
+  // Note: current_only is accepted but not yet implemented (would require end_date field)
+  const { company, roles, sectors, limit = 50, page = 1 } = params;
 
   const match: Record<string, unknown> = {
     "enriched_data.work_experience": { $regex: company, $options: "i" },

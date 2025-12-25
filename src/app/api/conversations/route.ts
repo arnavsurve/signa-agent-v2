@@ -72,8 +72,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { title, firstMessage } = body as {
-      title?: string;
+    const { firstMessage } = body as {
       firstMessage?: string;
     };
 

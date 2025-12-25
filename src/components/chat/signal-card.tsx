@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { MapPin, Users, TrendingUp, ExternalLink, Briefcase } from "lucide-react";
+import { MapPin, Users, TrendingUp, Briefcase } from "lucide-react";
 import { SignalModal } from "./signal-modal";
 
 /**
@@ -78,7 +78,6 @@ export function SignalCard({ profile, className, compact = false }: SignalCardPr
   const profileImageUrl = getProfileImageUrl(profile);
 
   const primaryLocation = profile.locations?.[0] || profile.location || "";
-  const primarySector = profile.sectors?.[0] || "";
   const primaryRole = profile.jobTitles?.[0] || profile.headline || "";
 
   return (

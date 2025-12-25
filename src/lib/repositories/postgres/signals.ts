@@ -120,12 +120,6 @@ export async function getStealthSignals(params: {
   return query<TrackedSignal>(sql, queryParams);
 }
 
-
-
-// =============================================================================
-// NEW FUNCTIONS - Signal Enrichment Support
-// =============================================================================
-
 /**
  * Network follower information - who from user's network follows a person.
  */

@@ -1,4 +1,4 @@
-import { CoreMessage, ToolResultPart } from "ai";
+import { CoreMessage } from "ai";
 import { generateText } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { ContextConfig, createContextConfig } from "./config";

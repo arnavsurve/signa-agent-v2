@@ -15,7 +15,6 @@ import {
   RelatedPerson,
   BioChange,
   FreeAgentDetails,
-  TriggerType,
   ConnectionIdentifier,
 } from "@/lib/types/triggers";
 import {
@@ -214,7 +213,8 @@ export class TriggerService {
       twitterFollowsResult,
       twitterFollowersResult,
       linkedinConnectionsResult,
-      bioChanges,
+      // Bio changes query result - we use personProfile.bio_changes instead
+      ,
       stealthStatus,
       freeAgentResult,
     ] = await Promise.all([

@@ -7,7 +7,6 @@ import {
   isYesterday,
   isThisWeek,
   isThisMonth,
-  startOfDay,
 } from "date-fns";
 
 interface Conversation {
@@ -37,8 +36,6 @@ function groupConversations(conversations: Conversation[]): ConversationGroup[] 
     "This Month": [],
     Older: [],
   };
-
-  const now = new Date();
 
   for (const conv of conversations) {
     const date = new Date(conv.updatedAt);
@@ -102,7 +99,6 @@ export function ConversationList({
                 id={conv.id}
                 title={conv.title}
                 preview={conv.preview}
-                updatedAt={conv.updatedAt}
                 isActive={conv.id === activeId}
                 onRename={onRename}
                 onDelete={onDelete}

@@ -103,6 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [getAccessToken, clearTokens]);
 
   const refreshAccessToken = useCallback(async (): Promise<boolean> => {

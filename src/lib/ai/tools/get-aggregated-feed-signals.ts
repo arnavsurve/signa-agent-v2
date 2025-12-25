@@ -1,6 +1,6 @@
 import { tool } from "ai";
 import { z } from "zod";
-import { ToolServices, UserContext, ProfileResult, Feed } from "./index";
+import { ToolServices, UserContext, ProfileResult } from "./index";
 import { searchProfiles } from "@/lib/repositories/mongodb/profiles";
 import { getUserFeeds } from "@/lib/repositories/postgres/network";
 import { query } from "@/lib/db/postgres";
