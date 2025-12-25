@@ -1,8 +1,11 @@
 import { Tool } from "ai";
 import { createFindPeopleTool } from "./find-people";
-import { createGetPersonDetailsTool } from "./get-person-details";
+import { createGetPersonActivityTool } from "./get-person-activity";
 import { createGetMyFeedsTool, createGetFeedSignalsTool } from "./feeds";
 import { createGetMyGroupsTool, createGetGroupMembersTool } from "./groups";
+
+// Legacy imports - kept for backward compatibility, can be removed later
+import { createGetPersonDetailsTool } from "./get-person-details";
 import { createAnalyzeNetworkTool } from "./analyze-network";
 import { createFindByCompanyTool } from "./find-by-company";
 import { createFindByInvestorTool } from "./find-by-investor";
@@ -24,6 +27,7 @@ export interface ToolServices {
   // These will be implemented as we build out the services
   searchPeople: (params: SearchPeopleParams) => Promise<SearchPeopleResult>;
   getPersonDetails: (params: GetPersonDetailsParams) => Promise<PersonDetails | null>;
+  getPersonActivity: (params: GetPersonActivityParams) => Promise<PersonActivityResult | null>;
   getUserFeeds: (userId: number) => Promise<Feed[]>;
   getFeedSignals: (feedId: number, userId: number, limit?: number) => Promise<FeedSignal[]>;
   getUserGroups: (userId: number) => Promise<Group[]>;
@@ -210,23 +214,143 @@ export interface AnalyzeNetworkResult {
 }
 
 // ============================================================================
+// Person Activity Types
+// ============================================================================
+
+export interface GetPersonActivityParams {
+  userId?: string;
+  screenName?: string;
+  days?: number;
+  includeTwitter?: boolean;
+  includeLinkedin?: boolean;
+  includeBio?: boolean;
+  includeStealth?: boolean;
+  includeFreeAgent?: boolean;
+  maxBioChanges?: number;
+  requestingUserId: number;
+}
+
+export interface PersonActivityResult {
+  profile: ProfileResult;
+  twitterFollowers: RelatedPersonResult[];
+  twitterFollowing: RelatedPersonResult[];
+  linkedinConnections: RelatedPersonResult[];
+  bioChanges: BioChangeResult[];
+  stealthStatus: StealthStatusResult | null;
+  freeAgentDetails: FreeAgentResult | null;
+  activity: ActivityEventResult[];
+  summary: ActivitySummaryResult;
+}
+
+export interface RelatedPersonResult {
+  userId: string;
+  screenName?: string;
+  name: string;
+  headline?: string;
+  profileUrl: string;
+  profileImageUrl?: string;
+  connectionDate: string;
+  direction: "outgoing" | "incoming";
+  source: "twitter" | "linkedin";
+}
+
+export interface BioChangeResult {
+  before: string;
+  after: string;
+  date: string;
+}
+
+export interface StealthStatusResult {
+  type: "in" | "out";
+  date: string;
+  linkedinUrl?: string;
+}
+
+export interface FreeAgentResult {
+  previousCompany?: string;
+  previousTitle?: string;
+  signalDate: string;
+}
+
+export interface ActivityEventResult {
+  eventType: string;
+  date: string;
+  relatedPerson?: {
+    userId: string;
+    screenName?: string;
+    name: string;
+    headline?: string;
+    profileUrl: string;
+    profileImageUrl?: string;
+    direction: "outgoing" | "incoming" | "mutual";
+  };
+  bioChange?: BioChangeResult;
+  stealthDetails?: { type: "in" | "out"; linkedinUrl?: string };
+  freeAgentDetails?: FreeAgentResult;
+}
+
+export interface ActivitySummaryResult {
+  twitterFollowersCount: number;
+  twitterFollowingCount: number;
+  linkedinConnectionsCount: number;
+  bioChangesCount: number;
+  hasStealth: boolean;
+  stealthStatus: "in" | "out" | null;
+  isFreeAgent: boolean;
+  lastActivityDate?: string;
+}
+
+// ============================================================================
 // Tool creation
 // ============================================================================
 
 /**
- * Create all tools with user context and services.
+ * Create the core consolidated tool set (6 tools).
+ *
+ * This is the recommended tool set for production use:
+ * 1. find_people - Search profiles with filters and signal context
+ * 2. get_person_activity - Complete activity for a person (replaces get_person_details, get_relationship_network)
+ * 3. get_my_feeds - List user's saved feeds
+ * 4. get_feed_signals - Get signals from a feed (aka get_feed_activity)
+ * 5. get_my_groups - List user's groups
+ * 6. get_group_members - Get group members with signals (aka get_group_activity)
  */
 export function createTools(
   services: ToolServices,
   context: UserContext
 ): Record<string, Tool> {
   return {
+    // Core tools (recommended)
     find_people: createFindPeopleTool(services, context),
-    get_person_details: createGetPersonDetailsTool(services, context),
+    get_person_activity: createGetPersonActivityTool(services, context),
     get_my_feeds: createGetMyFeedsTool(services, context),
     get_feed_signals: createGetFeedSignalsTool(services, context),
     get_my_groups: createGetMyGroupsTool(services, context),
     get_group_members: createGetGroupMembersTool(services, context),
+  };
+}
+
+/**
+ * Create the full tool set including legacy tools.
+ *
+ * Use this for backward compatibility. The legacy tools are:
+ * - get_person_details: Replaced by get_person_activity
+ * - analyze_network: Useful for influencer/cluster analysis
+ * - find_by_company: Use find_people with companies filter instead
+ * - find_by_investor: Use find_people with investors filter instead
+ * - get_relationship_network: Replaced by get_person_activity
+ * - get_aggregated_feed_signals: For cross-feed aggregation
+ */
+export function createAllTools(
+  services: ToolServices,
+  context: UserContext
+): Record<string, Tool> {
+  return {
+    // Core tools
+    ...createTools(services, context),
+
+    // Legacy tools (for backward compatibility)
+    get_person_details: createGetPersonDetailsTool(services, context),
     analyze_network: createAnalyzeNetworkTool(services, context),
     find_by_company: createFindByCompanyTool(services, context),
     find_by_investor: createFindByInvestorTool(services, context),
