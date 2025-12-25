@@ -4,6 +4,11 @@ import {
   SearchPeopleResult,
   GetPersonDetailsParams,
   PersonDetails,
+  GetPersonActivityParams,
+  PersonActivityResult,
+  RelatedPersonResult,
+  BioChangeResult,
+  ActivityEventResult,
   Feed,
   FeedSignal,
   Group,
@@ -34,6 +39,7 @@ import {
   getSignalEnrichmentService,
   EnrichedProfileWithSignals,
 } from "@/lib/services/signalEnrichment";
+import { getTriggerService } from "@/lib/services/triggerService";
 
 /**
  * Create the services object that provides implementations for all tools.
@@ -43,6 +49,7 @@ export function createToolServices(): ToolServices {
   return {
     searchPeople,
     getPersonDetails,
+    getPersonActivity,
     getUserFeeds: getUserFeedsService,
     getFeedSignals: getFeedSignalsService,
     getUserGroups: getUserGroupsService,
@@ -325,6 +332,161 @@ async function getPersonDetails(
         };
       }
     ),
+  };
+}
+
+/**
+ * Get comprehensive activity for a person.
+ * Uses TriggerService to fetch Twitter follows, LinkedIn connections, bio changes, etc.
+ */
+async function getPersonActivity(
+  params: GetPersonActivityParams
+): Promise<PersonActivityResult | null> {
+  // Find the profile first
+  let profile: EnrichedProfile | null = null;
+
+  if (params.userId) {
+    profile = await findProfileByUserId(params.userId);
+  } else if (params.screenName) {
+    profile = await findProfileByScreenName(params.screenName);
+  }
+
+  if (!profile) {
+    return null;
+  }
+
+  const triggerService = getTriggerService();
+  const activity = await triggerService.getPersonActivity(
+    profile.user_id,
+    params.requestingUserId,
+    {
+      days: params.days,
+      includeTwitter: params.includeTwitter,
+      includeLinkedin: params.includeLinkedin,
+      includeBio: params.includeBio,
+      includeStealth: params.includeStealth,
+      includeFreeAgent: params.includeFreeAgent,
+      maxBioChanges: params.maxBioChanges,
+    }
+  );
+
+  // Transform profile to ProfileResult
+  const profileResult = profileToResult(profile);
+
+  // Transform activity data to tool result format
+  const twitterFollowers: RelatedPersonResult[] = activity.twitterFollowers.map(
+    (p) => ({
+      userId: p.userId,
+      screenName: p.screenName,
+      name: p.name,
+      headline: p.headline,
+      profileUrl: p.profileUrl,
+      profileImageUrl: p.profileImageUrl,
+      connectionDate: p.connectionDate,
+      direction: p.direction,
+      source: p.source,
+    })
+  );
+
+  const twitterFollowing: RelatedPersonResult[] = activity.twitterFollowing.map(
+    (p) => ({
+      userId: p.userId,
+      screenName: p.screenName,
+      name: p.name,
+      headline: p.headline,
+      profileUrl: p.profileUrl,
+      profileImageUrl: p.profileImageUrl,
+      connectionDate: p.connectionDate,
+      direction: p.direction,
+      source: p.source,
+    })
+  );
+
+  const linkedinConnections: RelatedPersonResult[] =
+    activity.linkedinConnections.map((p) => ({
+      userId: p.userId,
+      screenName: p.screenName,
+      name: p.name,
+      headline: p.headline,
+      profileUrl: p.profileUrl,
+      profileImageUrl: p.profileImageUrl,
+      connectionDate: p.connectionDate,
+      direction: p.direction,
+      source: p.source,
+    }));
+
+  const bioChanges: BioChangeResult[] = activity.bioChanges.map((c) => ({
+    before: c.before,
+    after: c.after,
+    date: c.date,
+  }));
+
+  const activityEvents: ActivityEventResult[] = activity.activity.map((e) => ({
+    eventType: e.eventType,
+    date: e.date,
+    relatedPerson: e.relatedPerson
+      ? {
+          userId: e.relatedPerson.userId,
+          screenName: e.relatedPerson.screenName,
+          name: e.relatedPerson.name,
+          headline: e.relatedPerson.headline,
+          profileUrl: e.relatedPerson.profileUrl,
+          profileImageUrl: e.relatedPerson.profileImageUrl,
+          direction: e.relatedPerson.direction,
+        }
+      : undefined,
+    bioChange: e.bioChange
+      ? {
+          before: e.bioChange.before,
+          after: e.bioChange.after,
+          date: e.bioChange.date,
+        }
+      : undefined,
+    stealthDetails: e.stealthDetails,
+    freeAgentDetails: e.freeAgentDetails
+      ? {
+          previousCompany: e.freeAgentDetails.previousCompany,
+          previousTitle: e.freeAgentDetails.previousTitle,
+          signalDate: e.freeAgentDetails.signalDate,
+        }
+      : undefined,
+  }));
+
+  return {
+    profile: profileResult,
+    twitterFollowers,
+    twitterFollowing,
+    linkedinConnections,
+    bioChanges,
+    stealthStatus: activity.summary.hasStealth
+      ? {
+          type: activity.summary.stealthStatus!,
+          date: activity.activity.find(
+            (e) => e.eventType === "stealth_in" || e.eventType === "stealth_out"
+          )?.date || "",
+          linkedinUrl: activity.activity.find(
+            (e) => e.eventType === "stealth_in" || e.eventType === "stealth_out"
+          )?.stealthDetails?.linkedinUrl,
+        }
+      : null,
+    freeAgentDetails: activity.freeAgentDetails
+      ? {
+          previousCompany: activity.freeAgentDetails.previousCompany,
+          previousTitle: activity.freeAgentDetails.previousTitle,
+          signalDate: activity.freeAgentDetails.signalDate,
+        }
+      : null,
+    activity: activityEvents,
+    summary: {
+      twitterFollowersCount: activity.summary.twitterFollowersCount,
+      twitterFollowingCount: activity.summary.twitterFollowingCount,
+      linkedinConnectionsCount: activity.summary.linkedinConnectionsCount,
+      bioChangesCount: activity.summary.bioChangesCount,
+      hasStealth: activity.summary.hasStealth,
+      stealthStatus: activity.summary.stealthStatus,
+      isFreeAgent: activity.summary.isFreeAgent,
+      lastActivityDate: activity.summary.lastActivityDate,
+    },
   };
 }
 
