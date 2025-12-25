@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   ChevronDown,
   ChevronRight,
@@ -52,27 +52,48 @@ const DEFAULT_TOOL_ICON = <Search className="w-3 h-3" />;
 export function ToolEvents({ invocations, isLoading }: ToolEventsProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const { addProfiles } = useProfileCache();
+  
+  // Track which tool calls we've already processed to avoid infinite loops
+  const processedToolCallIds = useRef<Set<string>>(new Set());
 
   // Add profiles to cache as soon as tool results are available
   useEffect(() => {
+    const profilesToAdd: Array<{
+      userId: number;
+      screenName: string;
+      name: string;
+      profileImageUrl?: string;
+      headline?: string;
+      profileUrl?: string;
+      linkedinUrl?: string;
+    }> = [];
+
     for (const inv of invocations) {
-      if (inv.state === "result" && inv.result) {
-        const result = inv.result as Record<string, unknown>;
-        const profiles = extractProfiles(result);
-        if (profiles.length > 0) {
-          // Convert to cache format (only need the fields the cache uses)
-          const cacheProfiles = profiles.map((p) => ({
-            userId: p.userId,
-            screenName: p.screenName,
-            name: p.name,
-            profileImageUrl: p.profileImageUrl,
-            headline: p.headline,
-            profileUrl: p.profileUrl,
-            linkedinUrl: p.linkedinUrl,
-          }));
-          addProfiles(cacheProfiles);
-        }
+      // Skip if already processed or not complete
+      if (processedToolCallIds.current.has(inv.toolCallId)) continue;
+      if (inv.state !== "result" || !inv.result) continue;
+
+      // Mark as processed
+      processedToolCallIds.current.add(inv.toolCallId);
+
+      const result = inv.result as Record<string, unknown>;
+      const profiles = extractProfiles(result);
+      
+      for (const p of profiles) {
+        profilesToAdd.push({
+          userId: p.userId,
+          screenName: p.screenName,
+          name: p.name,
+          profileImageUrl: p.profileImageUrl,
+          headline: p.headline,
+          profileUrl: p.profileUrl,
+          linkedinUrl: p.linkedinUrl,
+        });
       }
+    }
+
+    if (profilesToAdd.length > 0) {
+      addProfiles(profilesToAdd);
     }
   }, [invocations, addProfiles]);
 
