@@ -45,6 +45,17 @@ export interface RawProfile {
     linkedin_url?: string;
     linkedin_urn?: string;
     crunchbase_url?: string;
+    changes?: Array<{
+      description_changed?: boolean;
+      before?: {
+        description?: string;
+        date?: { $date: string } | string | Date;
+      };
+      after?: {
+        description?: string;
+        date?: { $date: string } | string | Date;
+      };
+    }>;
   };
   metadata?: {
     complete?: boolean;
@@ -76,7 +87,13 @@ export interface EnrichedProfile {
   amount_raised?: number;
   is_technical?: boolean;
   linkedin_url?: string;
+  linkedin_urn?: string;
   crunchbase_url?: string;
+  // Bio changes (from enriched_data.changes)
+  bio_changes?: Array<{
+    before: { description: string; date: string };
+    after: { description: string; date: string };
+  }>;
   // Signal context (populated by enrichment)
   followed_by_count?: number;
   stealth_status?: string;
@@ -164,12 +181,39 @@ function transformProfile(raw: RawProfile): EnrichedProfile {
     amount_raised: enriched.amount_raised,
     is_technical: enriched.is_technical,
     linkedin_url: enriched.linkedin_url,
+    linkedin_urn: enriched.linkedin_urn,
     crunchbase_url: enriched.crunchbase_url,
+    // Bio changes from enriched_data.changes
+    bio_changes: enriched.changes
+      ?.filter((c) => c.description_changed && c.before?.description && c.after?.description)
+      .map((c) => ({
+        before: {
+          description: c.before!.description!,
+          date: extractDateString(c.before?.date),
+        },
+        after: {
+          description: c.after!.description!,
+          date: extractDateString(c.after?.date),
+        },
+      })),
     // Profile URL (internal Signa search)
     profile_url: raw.user_id
       ? `https://app.signa.software/search?user_id=${raw.user_id}`
       : undefined,
   };
+}
+
+/**
+ * Extract date string from various MongoDB date formats.
+ */
+function extractDateString(
+  date: { $date: string } | string | Date | undefined
+): string {
+  if (!date) return "";
+  if (typeof date === "string") return date;
+  if (date instanceof Date) return date.toISOString();
+  if (typeof date === "object" && "$date" in date) return date.$date;
+  return "";
 }
 
 /**
