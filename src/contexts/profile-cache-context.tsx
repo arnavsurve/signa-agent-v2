@@ -15,6 +15,7 @@ interface ProfileData {
   profileImageUrl?: string;
   headline?: string;
   profileUrl?: string;
+  linkedinUrl?: string;
 }
 
 interface ProfileCacheContextType {
@@ -54,9 +55,40 @@ export function ProfileCacheProvider({ children }: { children: ReactNode }) {
 
   const getProfileByUrl = useCallback(
     (url: string): ProfileData | undefined => {
-      return profilesByUrl.get(url);
+      // Try exact match first
+      const exact = profilesByUrl.get(url);
+      if (exact) return exact;
+
+      // Try to extract identifiers from the URL and search
+      // LinkedIn URL: extract the profile slug
+      const linkedinMatch = url.match(/linkedin\.com\/in\/([^/?]+)/);
+      if (linkedinMatch) {
+        const slug = linkedinMatch[1];
+        // Search through all cached profiles for matching LinkedIn URL
+        for (const profile of profilesByUrl.values()) {
+          if (profile.linkedinUrl?.includes(slug)) {
+            return profile;
+          }
+        }
+      }
+
+      // Twitter/X URL: extract screen name
+      const twitterMatch = url.match(/(?:x\.com|twitter\.com)\/([^/?]+)/);
+      if (twitterMatch) {
+        const screenName = twitterMatch[1].toLowerCase();
+        return profilesByScreenName.get(screenName);
+      }
+
+      // Signa app URL: extract user_id
+      const signaMatch = url.match(/app\.signa\.software\/search\?user_id=(\d+)/);
+      if (signaMatch) {
+        const userId = Number(signaMatch[1]);
+        return profilesByUserId.get(userId);
+      }
+
+      return undefined;
     },
-    [profilesByUrl]
+    [profilesByUrl, profilesByScreenName, profilesByUserId]
   );
 
   const addProfiles = useCallback((profiles: ProfileData[]) => {
@@ -75,8 +107,18 @@ export function ProfileCacheProvider({ children }: { children: ReactNode }) {
     setProfilesByUrl((prev) => {
       const next = new Map(prev);
       for (const profile of profiles) {
+        // Cache by profileUrl
         if (profile.profileUrl) {
           next.set(profile.profileUrl, profile);
+        }
+        // Also cache by linkedinUrl for lookup when agent uses linkedin links
+        if (profile.linkedinUrl) {
+          next.set(profile.linkedinUrl, profile);
+        }
+        // Also cache by twitter URL if we have screenName
+        if (profile.screenName) {
+          next.set(`https://x.com/${profile.screenName}`, profile);
+          next.set(`https://twitter.com/${profile.screenName}`, profile);
         }
       }
       return next;
