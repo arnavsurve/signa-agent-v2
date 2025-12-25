@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ChevronDown,
   ChevronRight,
@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { type ProfileData } from "./signal-card";
+import { useProfileCache } from "@/contexts/profile-cache-context";
 
 interface ToolInvocation {
   toolCallId: string;
@@ -50,6 +51,30 @@ const DEFAULT_TOOL_ICON = <Search className="w-3 h-3" />;
 
 export function ToolEvents({ invocations, isLoading }: ToolEventsProps) {
   const [isExpanded, setIsExpanded] = useState(true);
+  const { addProfiles } = useProfileCache();
+
+  // Add profiles to cache as soon as tool results are available
+  useEffect(() => {
+    for (const inv of invocations) {
+      if (inv.state === "result" && inv.result) {
+        const result = inv.result as Record<string, unknown>;
+        const profiles = extractProfiles(result);
+        if (profiles.length > 0) {
+          // Convert to cache format (only need the fields the cache uses)
+          const cacheProfiles = profiles.map((p) => ({
+            userId: p.userId,
+            screenName: p.screenName,
+            name: p.name,
+            profileImageUrl: p.profileImageUrl,
+            headline: p.headline,
+            profileUrl: p.profileUrl,
+            linkedinUrl: p.linkedinUrl,
+          }));
+          addProfiles(cacheProfiles);
+        }
+      }
+    }
+  }, [invocations, addProfiles]);
 
   if (invocations.length === 0) return null;
 
@@ -251,8 +276,41 @@ function formatResultPreview(result: Record<string, unknown>): string {
 function extractProfiles(result?: Record<string, unknown>): ProfileData[] {
   if (!result) return [];
 
-  const profiles = (result.results ?? result.profiles) as unknown[] | undefined;
-  if (!Array.isArray(profiles)) return [];
+  // Collect profiles from various possible locations in tool results
+  const allProfiles: unknown[] = [];
+
+  // Standard results/profiles arrays (find_people, etc.)
+  if (Array.isArray(result.results)) {
+    allProfiles.push(...result.results);
+  }
+  if (Array.isArray(result.profiles)) {
+    allProfiles.push(...result.profiles);
+  }
+
+  // Main profile from get_person_activity/get_person_details
+  if (result.profile && typeof result.profile === "object") {
+    allProfiles.push(result.profile);
+  }
+
+  // Related people from get_person_activity
+  if (Array.isArray(result.twitter_followers)) {
+    allProfiles.push(...result.twitter_followers);
+  }
+  if (Array.isArray(result.twitter_following)) {
+    allProfiles.push(...result.twitter_following);
+  }
+  if (Array.isArray(result.linkedin_connections)) {
+    allProfiles.push(...result.linkedin_connections);
+  }
+
+  // Group members
+  if (Array.isArray(result.members)) {
+    allProfiles.push(...result.members);
+  }
+
+  if (allProfiles.length === 0) return [];
+
+  const profiles = allProfiles;
 
   return profiles
     .filter((p): p is Record<string, unknown> => p !== null && typeof p === "object")

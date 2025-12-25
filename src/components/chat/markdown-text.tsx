@@ -26,9 +26,11 @@ export function MarkdownText({ content, className }: MarkdownTextProps) {
         components={{
           // Custom link rendering with profile images
           a: ({ href, children }) => {
-            // Check if this is a profile link (x.com or twitter.com)
-            const isProfileLink =
+            // Check if this is a profile link (x.com, twitter.com, or linkedin.com)
+            const isTwitterLink =
               href?.includes("x.com/") || href?.includes("twitter.com/");
+            const isLinkedInLink = href?.includes("linkedin.com/");
+            const isProfileLink = isTwitterLink || isLinkedInLink;
             const profileByUrl = href ? getProfileByUrl(href) : undefined;
 
             if (profileByUrl && href) {
