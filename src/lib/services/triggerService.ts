@@ -68,14 +68,18 @@ function profileToRelatedPerson(
     screenName: profile.screen_name,
     name: profile.name,
     headline: profile.headline,
-    profileUrl: getProfileUrl(
-      extractProfileUrlData({
-        user_id: profile.user_id,
-        linkedin_url: profile.linkedin_url,
-        screen_name: profile.screen_name,
-      })
-    ),
+    // Always use Signa app URL for profiles (they're all complete)
+    profileUrl: profile.user_id
+      ? `https://app.signa.software/search?user_id=${profile.user_id}`
+      : getProfileUrl(
+          extractProfileUrlData({
+            user_id: profile.user_id,
+            linkedin_url: profile.linkedin_url,
+            screen_name: profile.screen_name,
+          })
+        ),
     profileImageUrl: profile.profile_image_url,
+    linkedinUrl: profile.linkedin_url,
     connectionDate,
     direction,
     source,

@@ -249,6 +249,7 @@ export interface RelatedPersonResult {
   headline?: string;
   profileUrl: string;
   profileImageUrl?: string;
+  linkedinUrl?: string;
   connectionDate: string;
   direction: "outgoing" | "incoming";
   source: "twitter" | "linkedin";
